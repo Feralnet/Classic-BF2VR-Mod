@@ -19,7 +19,7 @@ Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` i
 
 - Star Wars Battlefront II (Classic, 2005), Steam or GOG, as it installs — the 32-bit
   game, not the Classic Collection. No Unofficial 1.3 Patch or "4GB patch" needed (the
-  mod also works on top of UOP r130).
+  mod **also** works on top of UOP r130).
 - An OpenXR runtime set as active (SteamVR or your headset's PC app).
 
 Problems: open a [bug report](../../issues/new?template=bug_report.yml) and attach the
