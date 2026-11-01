@@ -22,8 +22,14 @@ Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` i
   mod **also** works on top of UOP r130).
 - An OpenXR runtime set as active (SteamVR or your headset's PC app).
 
-Problems: open a [bug report](../../issues/new?template=bug_report.yml) and attach the
+## Feedback
+
+Feel free to share bugs/errors on a [bug report](../../issues/new?template=bug_report.yml) and attach the
 log from `GameData\bf2vr_logs`. The mod never sends anything anywhere.
+
+Drop in Discord for chat: https://discord.gg/jmeSQ5SVjb
+
+Oh, and buy me a Ko-Fi! https://ko-fi.com/addvans
 
 ## How it is built
 
