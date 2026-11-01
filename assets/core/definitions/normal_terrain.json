@@ -1,0 +1,118 @@
+{
+  "group_name": "normal_terrain",
+  "source_name": "normal_terrain.fx",
+
+  "input_layouts": {
+    "terrain_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "COLOR",
+          "index": 0
+        },
+        "format": "float4"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "diffuse_blendmap_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "terrain_input",
+
+        "generic_input": {
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "detailing_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "terrain_input",
+
+        "generic_input": {
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "diffuse_blendmap_ps": {
+      "stage": "pixel"
+    },
+
+    "detailing_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SP_USE_STENCIL_SHADOW_MAP", "1" ]
+      ]
+    }
+  },
+
+  "rendertypes": { "Terrain2": {} },
+
+  "states": {
+    "diffuse blendmap": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "diffuse_blendmap_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_blendmap_ps"
+      }
+    },
+
+    "diffuse blendmap unlit": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "diffuse_blendmap_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_blendmap_ps"
+      }
+    },
+
+    "detailing": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "detailing_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "detailing_ps"
+      }
+    }
+  }
+}

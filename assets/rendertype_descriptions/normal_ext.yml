@@ -1,0 +1,141 @@
+Overridden RenderType: normal
+Constant Buffer Name: normal_ext
+
+Material Options:
+   Unlit: no
+
+Properties:
+   DiffuseColor:
+      Type: vec3
+      Default: [1.0, 1.0, 1.0]
+      Range: [0.0, 1.0]
+     
+   GlossMapWeight:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 1.0]
+
+   UseSpecularLighting:
+      Type: bool
+      Default: false
+
+   UseSpecularMap:
+      Type: bool
+      Default: false
+
+   UseTrueGlossMap:
+      Type: bool
+      Default: false
+
+   UseSpecularLightingNormalized:
+      Type: bool
+      Default: false
+
+   SpecularColor:
+      Type: vec3
+      Default: [1.0, 1.0, 1.0]
+      Range: [0.0, 1.0]
+
+   SpecularExponent:
+      Type: float
+      Default: 64.0
+      Range: [1.0, 2048.0]
+
+   UseParallaxOcclusionMapping:
+      Type: bool
+      Default: false
+      
+   HeightScale:
+      Type: float
+      Default: 0.05
+      Range: [0.0, 2048.0]
+
+   UseDetailMaps:
+      Type: bool
+      Default: false
+      
+   DetailTextureScale:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+      
+   UseOverlayMaps:
+      Type: bool
+      Default: false
+
+   OverlayTextureScale:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+ 
+   UseAOMap:
+      Type: bool
+      Default: false
+      
+   UseEmissiveMap:
+      Type: bool
+      Default: false
+
+   EmissiveTextureScale:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+
+   EmissivePower:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+
+   MultiplyEmissiveByVertexColor:
+      Type: bool
+      Default: false
+      
+   UseEnvMap:
+      Type: bool
+      Default: false
+
+   EnvMapVisibility:
+      Type: float
+      Default: 1.0
+      Range: [0.0001, 1.0]
+
+   IsDynamic:
+      Type: bool
+      Default: false
+
+   DynamicNormalSign:
+      Type: float
+      Default: 1.0
+      Range: [-1.0, 1.0]
+
+   UseInteriorMapping:
+      Type: bool
+      Default: false
+      
+   InteriorRoomSize:
+      Type: vec3
+      Default: [1.0, 1.0, 1.0]
+      Range: [0.000001, 100000.0]
+
+   InteriorRandomizeWalls:
+      Type: bool
+      Default: true
+
+   InteriorRandomnessSeed:
+      Type: uint
+      Default: 0
+      Range: [0, 4294967295]
+
+Resource Properties:
+   DiffuseMap:
+   SpecularMap:
+   NormalMap: 
+   HeightMap:
+   DetailMap:
+   DetailNormalMap: 
+   EmissiveMap:
+   OverlayDiffuseMap:
+   OverlayNormalMap:
+   AOMap:
+   EnvMap:
+   InteriorMap:

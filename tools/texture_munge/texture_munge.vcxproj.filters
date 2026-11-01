@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\munge_texture.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\process_image.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ispc_texcomp\ispc_texcomp.cpp">
+      <Filter>src\ispc_texcomp</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\format_helpers.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\munge_texture.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\process_image.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ispc_texcomp\ispc_texcomp.h">
+      <Filter>src\ispc_texcomp</Filter>
+    </ClInclude>
+    <ClInclude Include="src\texture_type.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{ece917c4-9047-4a69-bd3b-7edbdaa5ba24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ispc_texcomp">
+      <UniqueIdentifier>{bb1062c5-ac20-4140-b17f-4b266da37935}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\ispc_texcomp\kernel.ispc">
+      <Filter>src\ispc_texcomp</Filter>
+    </None>
+  </ItemGroup>
+</Project>

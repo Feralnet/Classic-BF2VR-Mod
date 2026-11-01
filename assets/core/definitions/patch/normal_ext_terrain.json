@@ -1,0 +1,241 @@
+{
+  "group_name": "normal_ext_terrain",
+  "source_name": "normal_ext_terrain.fx",
+
+  "input_layouts": {
+    "packed_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "TANGENT",
+          "index": 0
+        },
+        "format": "float4"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "packed_input",
+
+        "generic_input": {
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": true,
+          "tangents_unflagged": true,
+          "color": true,
+          "texture_coords": true
+        }
+      },
+
+      "static_flags": [
+        "TERRAIN_COMMON_LOW_DETAIL"
+      ],
+
+      "defines": [
+        [ "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING", "0" ],
+        [ "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING", "0" ],
+        [ "TERRAIN_COMMON_BASIC_BLENDING", "0" ],
+        [ "SP_USE_STENCIL_SHADOW_MAP", "0" ],
+        [ "SP_USE_PROJECTED_TEXTURE", "0" ]
+      ]
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "static_flags": [
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING",
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING",
+        "TERRAIN_COMMON_BASIC_BLENDING",
+        "TERRAIN_COMMON_LOW_DETAIL",
+        "SP_USE_STENCIL_SHADOW_MAP",
+        "SP_USE_PROJECTED_TEXTURE"
+      ],
+
+      "static_flags_ops": {
+        "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": {
+          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear"
+        },
+
+        "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": {
+          "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": "clear"
+        },
+
+        "TERRAIN_COMMON_LOW_DETAIL": {
+          "TERRAIN_COMMON_USE_PARALLAX_OFFSET_MAPPING": "clear",
+          "TERRAIN_COMMON_USE_PARALLAX_OCCLUSION_MAPPING": "clear",
+          "TERRAIN_COMMON_BASIC_BLENDING": "set"
+        }
+      }
+    }
+  },
+
+  "rendertypes": { "normal_ext_terrain": {} },
+
+  "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "unlit transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near opaque projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near opaque shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_STENCIL_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near opaque shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near transparent projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_STENCIL_SHADOW_MAP": true
+        }
+      }
+    },
+
+    "near transparent shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_STENCIL_SHADOW_MAP": true,
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    }
+  }
+}

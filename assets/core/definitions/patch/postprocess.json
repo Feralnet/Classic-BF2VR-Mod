@@ -1,0 +1,102 @@
+{
+  "group_name": "postprocess",
+  "source_name": "postprocess.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      },
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "0" ],
+        [ "BLOOM_THRESHOLDED", "0" ],
+        [ "BLOOM_USE_DIRT", "0" ],
+        [ "VIGNETTE_ACTIVE", "0" ],
+        [ "COLOR_GRADING_ACTIVE", "0" ],
+        [ "CONVERT_TO_SRGB", "0" ],
+        [ "DITHERING_ACTIVE", "0" ],
+        [ "FILM_GRAIN_ACTIVE", "0" ],
+        [ "FILM_GRAIN_COLORED", "0" ],
+        [ "OUTPUT_CMAA2_LUMA", "0" ]
+      ]
+    },
+
+    "main_combine_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "defines": [
+        [ "CONVERT_TO_SRGB", "0" ],
+        [ "COLOR_GRADING_ACTIVE", "1" ],
+        [ "VIGNETTE_ACTIVE", "0" ],
+        [ "FILM_GRAIN_ACTIVE", "0" ],
+        [ "FILM_GRAIN_COLORED", "0" ],
+        [ "DITHERING_ACTIVE", "0" ]
+      ],
+
+      "static_flags": [
+        "BLOOM_ACTIVE",
+        "BLOOM_THRESHOLDED",
+        "BLOOM_USE_DIRT",
+        "OUTPUT_CMAA2_LUMA"
+      ],
+
+      "static_flags_ops": {
+        "BLOOM_USE_DIRT": {
+          "BLOOM_ACTIVE": "set"
+        }
+      }
+    },
+
+    "main_finalize_ps": {
+      "stage": "pixel",
+      "function_name": "main_ps",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "0" ],
+        [ "BLOOM_THRESHOLDED", "0" ],
+        [ "BLOOM_USE_DIRT", "0" ],
+        [ "CONVERT_TO_SRGB", "1" ],
+        [ "COLOR_GRADING_ACTIVE", "0" ],
+        [ "DITHERING_ACTIVE", "1" ],
+        [ "OUTPUT_CMAA2_LUMA", "0" ]
+      ],
+
+      "static_flags": [
+        "FILM_GRAIN_ACTIVE",
+        "FILM_GRAIN_COLORED",
+        "VIGNETTE_ACTIVE"
+      ],
+
+      "static_flags_ops": {
+        "FILM_GRAIN_COLORED": {
+          "FILM_GRAIN_ACTIVE": "set"
+        }
+      }
+    },
+
+    "stock_hdr_to_linear_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "0" ],
+        [ "BLOOM_THRESHOLDED", "0" ],
+        [ "BLOOM_USE_DIRT", "0" ],
+        [ "VIGNETTE_ACTIVE", "0" ],
+        [ "COLOR_GRADING_ACTIVE", "0" ],
+        [ "CONVERT_TO_SRGB", "0" ],
+        [ "DITHERING_ACTIVE", "0" ],
+        [ "FILM_GRAIN_ACTIVE", "0" ],
+        [ "FILM_GRAIN_COLORED", "0" ],
+        [ "OUTPUT_CMAA2_LUMA", "0" ]
+      ]
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

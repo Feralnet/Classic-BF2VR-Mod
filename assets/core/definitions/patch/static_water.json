@@ -1,0 +1,159 @@
+{
+  "group_name": "static water",
+  "source_name": "static_water.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": true,
+          "tangents_unflagged": true,
+          "color": true,
+          "texture_coords": true
+        }
+      },
+
+      "defines": [
+        [ "STATIC_WATER_USE_SPECULAR", "0" ]
+      ]
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "static_flags": [
+        "STATIC_WATER_USE_SPECULAR",
+        "SP_USE_PROJECTED_TEXTURE"
+      ]
+    },
+
+    "oit_main_ps": {
+      "stage": "pixel",
+
+      "static_flags": [
+        "STATIC_WATER_USE_SPECULAR",
+        "SP_USE_PROJECTED_TEXTURE"
+      ]
+    }
+  },
+
+  "rendertypes": { "static_water": {} },
+
+  "states": {
+    "unlit opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "unlit transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "near transparent": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "near transparent projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    },
+
+    "near transparent shadow": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps"
+      }
+    },
+
+    "near transparent shadow projectedtex": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "main_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_main_ps",
+
+        "static_flags": {
+          "SP_USE_PROJECTED_TEXTURE": true
+        }
+      }
+    }
+  }
+}

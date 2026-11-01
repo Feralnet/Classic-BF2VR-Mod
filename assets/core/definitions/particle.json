@@ -1,0 +1,94 @@
+{
+  "group_name": "particle",
+  "source_name": "particle.fx",
+
+  "entrypoints": {
+    "normal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "blur_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "normal_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_normal_ps": {
+      "stage": "pixel"
+    },
+
+    "blur_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_blur_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "particle": {} },
+
+  "states": {
+    "normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_ps"
+      }
+    },
+
+    "blur": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blur_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blur_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_blur_ps"
+      }
+    }
+  }
+}

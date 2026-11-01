@@ -1,0 +1,78 @@
+{
+  "group_name": "zprepass",
+  "source_name": "zprepass.fx",
+
+  "entrypoints": {
+    "opaque_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "hardedged_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "opaque_ps": {
+      "stage": "pixel"
+    },
+
+    "hardedged_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "zprepass": {} },
+
+  "states": {
+    "near opaque": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "opaque_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "opaque_ps"
+      }
+    },
+
+    "near opaque hardedged": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "hardedged_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "hardedged_ps"
+      }
+    }
+  }
+}

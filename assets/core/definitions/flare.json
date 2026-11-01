@@ -1,0 +1,80 @@
+{
+  "group_name": "flare",
+  "source_name": "flare.fx",
+
+  "entrypoints": {
+    "flare_textured_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "flare_untextured_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "flare_textured_ps": {
+      "stage": "pixel"
+    },
+
+    "flare_untextured_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {
+    "flare": {}
+  },
+
+  "states": {
+    "textured flare": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "flare_textured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "flare_textured_ps"
+      }
+    },
+
+    "untextured flare": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "flare_untextured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "flare_untextured_ps"
+      }
+    }
+  }
+}

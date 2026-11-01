@@ -1,0 +1,218 @@
+{
+  "group_name": "interface",
+  "source_name": "interface.fx",
+
+  "input_layouts": {
+    "masked_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "float3"
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "float2"
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 1
+        },
+        "format": "float2"
+      }
+    ],
+
+    "vector_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "float3"
+      },
+      {
+        "semantic": {
+          "name": "COLOR",
+          "index": 0
+        },
+        "format": "float4"
+      }
+    ],
+
+    "untextured_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "float3"
+      }
+    ],
+
+    "textured_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "float3"
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "float2"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "masked_bitmap_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "masked_input",
+
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "vector_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "vector_input",
+
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "bitmap_untextured_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "untextured_input",
+
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "bitmap_textured_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "textured_input",
+
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "masked_bitmap_ps": {
+      "stage": "pixel"
+    },
+
+    "vector_ps": {
+      "stage": "pixel"
+    },
+
+    "bitmap_untextured_ps": {
+      "stage": "pixel"
+    },
+
+    "bitmap_textured_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {
+    "interface": {}
+  },
+
+  "states": {
+    "masked bitmap element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "masked_bitmap_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "masked_bitmap_ps"
+      }
+    },
+
+    "vector element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "vector_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "vector_ps"
+      }
+    },
+
+    "untextured bitmap element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "bitmap_untextured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bitmap_untextured_ps"
+      }
+    },
+
+    "textured bitmap element": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "bitmap_textured_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bitmap_textured_ps"
+      }
+    }
+  }
+}

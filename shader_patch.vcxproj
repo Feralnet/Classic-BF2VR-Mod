@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{77065F00-E7E4-4EDF-8C98-6EB87BC49C4D}</ProjectGuid>
+    <RootNamespace>dll</RootNamespace>
+    <ProjectName>shader_patch</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <VcpkgTriplet Condition="'$(Platform)'=='Win32'">
+    </VcpkgTriplet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>bin\$(Configuration)\</OutDir>
+    <IntDir>build\$(Configuration)\</IntDir>
+    <TargetName>d3d9</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <CodeAnalysisRuleSet>NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>bin\$(Configuration)\</OutDir>
+    <IntDir>build\$(Configuration)\</IntDir>
+    <TargetName>d3d9</TargetName>
+    <TargetExt>.dll</TargetExt>
+    <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
+    <EnableCppCoreCheck>true</EnableCppCoreCheck>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <PreprocessorDefinitions>_SILENCE_CXX20_CISO646_REMOVED_WARNING;SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DisableSpecificWarnings>4324;4275;4251;4127;4018;4201</DisableSpecificWarnings>
+      <ConformanceMode>true</ConformanceMode>
+      <EnablePREfast>false</EnablePREfast>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
+      <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory);$(MSBuildThisFileDirectory)src\vr\third_party</AdditionalIncludeDirectories>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3dcompiler.lib;d3d11.lib;DXGI.lib;dinput8.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
+    </Link>
+    <CustomBuild>
+      <Outputs>a lot of shader files (hopefully)</Outputs>
+      <Command>powershell -File compile_shaders.ps1 -checksums_dir build/$(ConfigurationName) -extra_args /Zi</Command>
+      <Message>Compiling Shaders...</Message>
+      <LinkObjects>false</LinkObjects>
+    </CustomBuild>
+    <FxCompile>
+      <ObjectFileOutput />
+    </FxCompile>
+    <PostBuildEvent />
+    <PostBuildEvent>
+      <Command>copy "$(WindowsSdkDir)Redist\D3D\x86\d3dcompiler_47.dll" "$(OutputPath)"</Command>
+      <Message>Copying D3DCompiler Redist...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <PreprocessorDefinitions>_SILENCE_CXX20_CISO646_REMOVED_WARNING;SOL_USING_CXX_LUA;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>$(SolutionDir)/shared/include;%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)src\vr\third_party</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4324;4275;4251;4127;4018;4201</DisableSpecificWarnings>
+      <ConformanceMode>true</ConformanceMode>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\%(Filename).obj</ObjectFileName>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>d3dcompiler.lib;d3d11.lib;DXGI.lib;dinput8.lib;Bcrypt.lib;dxguid.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>d3d9.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <CustomBuild>
+      <Outputs>a lot of shader files (hopefully)</Outputs>
+      <Command>powershell -File compile_shaders.ps1 -checksums_dir build/$(ConfigurationName)</Command>
+      <Message>Compiling Shaders...</Message>
+      <LinkObjects>false</LinkObjects>
+    </CustomBuild>
+    <FxCompile>
+      <ObjectFileOutput />
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>copy "$(WindowsSdkDir)Redist\D3D\x86\d3dcompiler_47.dll" "$(OutputPath)"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copying D3DCompiler Redist...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\bf2_log_monitor.cpp" />
+    <ClCompile Include="src\core\backbuffer_cmaa2_views.cpp" />
+    <ClCompile Include="src\core\basic_builtin_textures.cpp" />
+    <ClCompile Include="src\core\d3d11_helpers.cpp" />
+    <ClCompile Include="src\core\depth_msaa_resolver.cpp" />
+    <ClCompile Include="src\core\game_alt_postprocessing.cpp" />
+    <ClCompile Include="src\core\game_rendertarget.cpp" />
+    <ClCompile Include="src\core\game_shader.cpp" />
+    <ClCompile Include="src\core\image_stretcher.cpp" />
+    <ClCompile Include="src\core\input_layout_descriptions.cpp" />
+    <ClCompile Include="src\core\oit_provider.cpp" />
+    <ClCompile Include="src\core\postprocessing\backbuffer_resolver.cpp" />
+    <ClCompile Include="src\core\postprocessing\bloom.cpp" />
+    <ClCompile Include="src\core\postprocessing\scene_blur.cpp" />
+    <ClCompile Include="src\core\postprocessing\scope_blur.cpp" />
+    <ClCompile Include="src\core\sampler_states.cpp" />
+    <ClCompile Include="src\core\screenshot.cpp" />
+    <ClCompile Include="src\core\shader_input_layouts.cpp" />
+    <ClCompile Include="src\core\shader_patch.cpp" />
+    <ClCompile Include="src\core\swapchain.cpp" />
+    <ClCompile Include="src\core\texture_database.cpp" />
+    <ClCompile Include="src\core\texture_loader.cpp" />
+    <ClCompile Include="src\core\text\font_atlas_builder.cpp" />
+    <ClCompile Include="src\core\tools\pixel_inspector.cpp" />
+    <ClCompile Include="src\dinput_hooks.cpp" />
+    <ClCompile Include="src\vr\vr_hud_render.cpp" />
+    <ClCompile Include="src\vr\vr_melee.cpp" />
+    <ClCompile Include="src\vr\vr_post_render.cpp" />
+    <ClCompile Include="src\vr\vr_settings.cpp" />
+    <ClCompile Include="src\vr\vr_saber_render.cpp" />
+    <ClCompile Include="src\vr\vr_sound.cpp" />
+    <ClCompile Include="src\vr\vr_system.cpp" />
+    <ClCompile Include="src\direct3d\device.cpp" />
+    <ClCompile Include="src\direct3d\format_patcher.cpp" />
+    <ClCompile Include="src\direct3d\helpers.cpp" />
+    <ClCompile Include="src\direct3d\pixel_shader.cpp" />
+    <ClCompile Include="src\direct3d\query.cpp" />
+    <ClCompile Include="src\direct3d\render_state_manager.cpp" />
+    <ClCompile Include="src\direct3d\surface_backbuffer.cpp" />
+    <ClCompile Include="src\direct3d\surface_depthstencil.cpp" />
+    <ClCompile Include="src\direct3d\surface_systemmem_dummy.cpp" />
+    <ClCompile Include="src\direct3d\texture2d_managed.cpp" />
+    <ClCompile Include="src\direct3d\texture2d_rendertarget.cpp" />
+    <ClCompile Include="src\direct3d\texture3d_managed.cpp" />
+    <ClCompile Include="src\direct3d\texture3d_resource.cpp" />
+    <ClCompile Include="src\direct3d\texturecube_managed.cpp" />
+    <ClCompile Include="src\direct3d\texture_stage_state_manager.cpp" />
+    <ClCompile Include="src\direct3d\upload_scratch_buffer.cpp" />
+    <ClCompile Include="src\direct3d\upload_texture.cpp" />
+    <ClCompile Include="src\direct3d\vertex_declaration.cpp" />
+    <ClCompile Include="src\direct3d\vertex_shader.cpp" />
+    <ClCompile Include="src\direct3d\creator.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;GLM_FORCE_SILENT_WARNINGS;GLM_FORCE_CXX17;_ENABLE_EXTENDED_ALIGNED_STORAGE=1;NOMINMAX;NDEBUG;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="src\effects\assao\ASSAODX11.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4275;4251;4127;4018;4201;4189;4505;4389</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4275;4251;4127;4018;4201;4189;4505;4389</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="src\effects\cmaa2.cpp" />
+    <ClCompile Include="src\effects\color_grading_lut_baker.cpp" />
+    <ClCompile Include="src\effects\color_grading_regions_blender.cpp" />
+    <ClCompile Include="src\effects\control.cpp" />
+    <ClCompile Include="src\effects\ffx_cas.cpp" />
+    <ClCompile Include="src\effects\mask_nan.cpp" />
+    <ClCompile Include="src\effects\postprocess.cpp" />
+    <ClCompile Include="src\effects\profiler.cpp" />
+    <ClCompile Include="src\effects\ssao.cpp" />
+    <ClCompile Include="src\file_hooks.cpp" />
+    <ClCompile Include="src\freetype_helpers.cpp" />
+    <ClCompile Include="src\game_support\font_declarations.cpp" />
+    <ClCompile Include="src\game_support\memory_hacks.cpp" />
+    <ClCompile Include="src\game_support\munged_shader_declarations.cpp" />
+    <ClCompile Include="src\imgui\imgui.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_demo.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_draw.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="src\imgui\imgui_impl_win32.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_stdlib.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="src\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui\imgui_widgets.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5054;4275;4251;4127;4018</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="src\input_config.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\material\constant_buffer_builder.cpp" />
+    <ClCompile Include="src\material\editor.cpp" />
+    <ClCompile Include="src\material\material.cpp" />
+    <ClCompile Include="src\material\factory.cpp">
+      <WholeProgramOptimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</WholeProgramOptimization>
+    </ClCompile>
+    <ClCompile Include="src\material\resource_info_view.cpp" />
+    <ClCompile Include="src\material\shader_factory.cpp" />
+    <ClCompile Include="src\material\shader_set.cpp" />
+    <ClCompile Include="src\material\sol_create_usertypes.cpp" />
+    <ClCompile Include="src\message_hooks.cpp" />
+    <ClCompile Include="src\shader\cache.cpp" />
+    <ClCompile Include="src\shader\compiler.cpp" />
+    <ClCompile Include="src\shader\database.cpp" />
+    <ClCompile Include="src\shader\group_definition.cpp" />
+    <ClCompile Include="src\shader\vertex_input_layout.cpp" />
+    <ClCompile Include="src\shader_cache_primer.cpp" />
+    <ClCompile Include="src\user_config.cpp" />
+    <ClCompile Include="src\windows_fonts_folder.cpp" />
+    <ClCompile Include="src\window_hooks.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\bf2_log_monitor.hpp" />
+    <ClInclude Include="src\core\backbuffer_cmaa2_views.hpp" />
+    <ClInclude Include="src\core\basic_builtin_textures.hpp" />
+    <ClInclude Include="src\core\constant_buffers.hpp" />
+    <ClInclude Include="src\core\depthstencil.hpp" />
+    <ClInclude Include="src\core\depth_msaa_resolver.hpp" />
+    <ClInclude Include="src\core\game_alt_postprocessing.hpp" />
+    <ClInclude Include="src\core\normalized_rect.hpp" />
+    <ClInclude Include="src\core\oit_provider.hpp" />
+    <ClInclude Include="src\core\patch_effects_config_handle.hpp" />
+    <ClInclude Include="src\core\game_input_layout.hpp" />
+    <ClInclude Include="src\core\game_rendertarget.hpp" />
+    <ClInclude Include="src\core\game_shader.hpp" />
+    <ClInclude Include="src\core\d3d11_helpers.hpp" />
+    <ClInclude Include="src\core\image_stretcher.hpp" />
+    <ClInclude Include="src\core\input_layout_element.hpp" />
+    <ClInclude Include="src\core\input_layout_descriptions.hpp" />
+    <ClInclude Include="src\core\postprocessing\backbuffer_resolver.hpp" />
+    <ClInclude Include="src\core\postprocessing\bloom.hpp" />
+    <ClInclude Include="src\core\postprocessing\scene_blur.hpp" />
+    <ClInclude Include="src\core\postprocessing\scope_blur.hpp" />
+    <ClInclude Include="src\core\sampler_states.hpp" />
+    <ClInclude Include="src\core\screenshot.hpp" />
+    <ClInclude Include="src\core\shader_input_layouts.hpp" />
+    <ClInclude Include="src\core\shader_patch.hpp" />
+    <ClInclude Include="src\core\game_texture.hpp" />
+    <ClInclude Include="src\core\swapchain.hpp" />
+    <ClInclude Include="src\core\texture_database.hpp" />
+    <ClInclude Include="src\core\texture_loader.hpp" />
+    <ClInclude Include="src\core\text\font_atlas_builder.hpp" />
+    <ClInclude Include="src\core\tools\pixel_inspector.hpp" />
+    <ClInclude Include="src\dinput_hooks.hpp" />
+    <ClInclude Include="src\vr\vr_hud_render.hpp" />
+    <ClInclude Include="src\vr\vr_melee.hpp" />
+    <ClInclude Include="src\vr\vr_post_render.hpp" />
+    <ClInclude Include="src\vr\vr_settings.hpp" />
+    <ClInclude Include="src\vr\vr_saber_render.hpp" />
+    <ClInclude Include="src\vr\vr_sound.hpp" />
+    <ClInclude Include="src\vr\vr_system.hpp" />
+    <ClInclude Include="src\direct3d\format_patcher.hpp" />
+    <ClInclude Include="src\direct3d\upload_texture.hpp" />
+    <ClInclude Include="src\direct3d\upload_scratch_buffer.hpp" />
+    <ClInclude Include="src\direct3d\base_texture.hpp" />
+    <ClInclude Include="src\direct3d\buffer.hpp" />
+    <ClInclude Include="src\direct3d\creator.hpp" />
+    <ClInclude Include="src\direct3d\debug_trace.hpp" />
+    <ClInclude Include="src\direct3d\helpers.hpp" />
+    <ClInclude Include="src\direct3d\device.hpp" />
+    <ClInclude Include="src\direct3d\pixel_shader.hpp" />
+    <ClInclude Include="src\direct3d\query.hpp" />
+    <ClInclude Include="src\direct3d\resource.hpp" />
+    <ClInclude Include="src\direct3d\surface_depthstencil.hpp" />
+    <ClInclude Include="src\direct3d\surface_systemmem_dummy.hpp" />
+    <ClInclude Include="src\direct3d\texture3d_managed.hpp" />
+    <ClInclude Include="src\direct3d\texturecube_managed.hpp" />
+    <ClInclude Include="src\direct3d\render_state_manager.hpp" />
+    <ClInclude Include="src\direct3d\surface_backbuffer.hpp" />
+    <ClInclude Include="src\direct3d\texture2d_managed.hpp" />
+    <ClInclude Include="src\direct3d\texture2d_rendertarget.hpp" />
+    <ClInclude Include="src\direct3d\texture_stage_state_manager.hpp" />
+    <ClInclude Include="src\direct3d\vertex_declaration.hpp" />
+    <ClInclude Include="src\direct3d\vertex_shader.hpp" />
+    <ClInclude Include="src\direct3d\texture3d_resource.hpp" />
+    <ClInclude Include="src\effects\assao\ASSAO.h" />
+    <ClInclude Include="src\effects\cmaa2.hpp" />
+    <ClInclude Include="src\effects\color_grading_regions_blender.hpp" />
+    <ClInclude Include="src\effects\color_helpers.hpp" />
+    <ClInclude Include="src\effects\ffx_cas.hpp" />
+    <ClInclude Include="src\effects\filmic_tonemapper.hpp" />
+    <ClInclude Include="src\effects\mask_nan.hpp" />
+    <ClInclude Include="src\effects\postprocess_params.hpp" />
+    <ClInclude Include="src\effects\color_grading_lut_baker.hpp" />
+    <ClInclude Include="src\effects\control.hpp" />
+    <ClInclude Include="src\effects\helpers.hpp" />
+    <ClInclude Include="src\effects\postprocess.hpp" />
+    <ClInclude Include="src\effects\profiler.hpp" />
+    <ClInclude Include="src\effects\rendertarget_allocator.hpp" />
+    <ClInclude Include="src\effects\ssao.hpp" />
+    <ClInclude Include="src\effects\tonemappers.hpp" />
+    <ClInclude Include="src\file_hooks.hpp" />
+    <ClInclude Include="src\freetype_helpers.hpp" />
+    <ClInclude Include="src\game_support\declarations\bloom_stock.hpp" />
+    <ClInclude Include="src\game_support\declarations\decal.hpp" />
+    <ClInclude Include="src\game_support\declarations\filtercopy.hpp" />
+    <ClInclude Include="src\game_support\declarations\flare.hpp" />
+    <ClInclude Include="src\game_support\declarations\interface.hpp" />
+    <ClInclude Include="src\game_support\declarations\lightbeam.hpp" />
+    <ClInclude Include="src\game_support\declarations\normal.hpp" />
+    <ClInclude Include="src\game_support\declarations\normalmapadder.hpp" />
+    <ClInclude Include="src\game_support\declarations\normal_terrain.hpp" />
+    <ClInclude Include="src\game_support\declarations\ocean.hpp" />
+    <ClInclude Include="src\game_support\declarations\particle.hpp" />
+    <ClInclude Include="src\game_support\declarations\perpixeldiffuselighting.hpp" />
+    <ClInclude Include="src\game_support\declarations\prereflection.hpp" />
+    <ClInclude Include="src\game_support\declarations\rain.hpp" />
+    <ClInclude Include="src\game_support\declarations\refraction.hpp" />
+    <ClInclude Include="src\game_support\declarations\sample.hpp" />
+    <ClInclude Include="src\game_support\declarations\shadowquad.hpp" />
+    <ClInclude Include="src\game_support\declarations\shield.hpp" />
+    <ClInclude Include="src\game_support\declarations\skyfog.hpp" />
+    <ClInclude Include="src\game_support\declarations\specularlighting.hpp" />
+    <ClInclude Include="src\game_support\declarations\stencilshadow.hpp" />
+    <ClInclude Include="src\game_support\declarations\water.hpp" />
+    <ClInclude Include="src\game_support\declarations\zprepass.hpp" />
+    <ClInclude Include="src\game_support\fixedfunc_shader_metadata.hpp" />
+    <ClInclude Include="src\game_support\font_declarations.hpp" />
+    <ClInclude Include="src\game_support\font_info.hpp" />
+    <ClInclude Include="src\game_support\memory_hacks.hpp" />
+    <ClInclude Include="src\game_support\munged_shader_declarations.hpp" />
+    <ClInclude Include="src\game_support\shader_declaration.hpp" />
+    <ClInclude Include="src\game_support\shader_declarations.hpp" />
+    <ClInclude Include="src\game_support\shader_metadata.hpp" />
+    <ClInclude Include="src\imgui\imconfig.h" />
+    <ClInclude Include="src\imgui\imgui.h" />
+    <ClInclude Include="src\imgui\imgui_ext.hpp" />
+    <ClInclude Include="src\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="src\imgui\imgui_impl_dx11_shaders.hpp" />
+    <ClInclude Include="src\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="src\imgui\imgui_internal.h" />
+    <ClInclude Include="src\imgui\imgui_stdlib.h" />
+    <ClInclude Include="src\imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\imgui\imstb_textedit.h" />
+    <ClInclude Include="src\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\input_config.hpp" />
+    <ClInclude Include="src\logger.hpp" />
+    <ClInclude Include="src\material\constant_buffer_builder.hpp" />
+    <ClInclude Include="src\material\editor.hpp" />
+    <ClInclude Include="src\material\factory.hpp" />
+    <ClInclude Include="src\material\material.hpp" />
+    <ClInclude Include="src\material\material_type.hpp" />
+    <ClInclude Include="src\material\properties_view.hpp" />
+    <ClInclude Include="src\material\shader_factory.hpp" />
+    <ClInclude Include="src\material\shader_set.hpp" />
+    <ClInclude Include="src\material\sol_create_usertypes.hpp" />
+    <ClInclude Include="src\material\resource_info_view.hpp" />
+    <ClInclude Include="src\message_hooks.hpp" />
+    <ClInclude Include="src\shader\bytecode_blob.hpp" />
+    <ClInclude Include="src\shader\cache.hpp" />
+    <ClInclude Include="src\shader\common.hpp" />
+    <ClInclude Include="src\shader\compiler.hpp" />
+    <ClInclude Include="src\shader\database.hpp" />
+    <ClInclude Include="src\shader\entrypoint_description.hpp" />
+    <ClInclude Include="src\shader\group_definition.hpp" />
+    <ClInclude Include="src\shader\preprocessor_defines.hpp" />
+    <ClInclude Include="src\shader\rendertype_state_description.hpp" />
+    <ClInclude Include="src\shader\source_file_dependency_index.hpp" />
+    <ClInclude Include="src\shader\source_file_store.hpp" />
+    <ClInclude Include="src\shader\static_flags.hpp" />
+    <ClInclude Include="src\shader\vertex_input_layout.hpp" />
+    <ClInclude Include="src\shader_constants.hpp" />
+    <ClInclude Include="src\unlock_memory.hpp" />
+    <ClInclude Include="src\user_config.hpp" />
+    <ClInclude Include="src\windows_fonts_folder.hpp" />
+    <ClInclude Include="src\window_helpers.hpp" />
+    <ClInclude Include="src\window_hooks.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="d3d9.def" />
+    <None Include="vcpkg.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="shared\shared.vcxproj">
+      <Project>{cc4890f2-40e7-446f-8971-5114ea566c27}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

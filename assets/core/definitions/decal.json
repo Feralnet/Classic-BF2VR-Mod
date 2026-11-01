@@ -1,0 +1,104 @@
+{
+  "group_name": "decal",
+  "source_name": "decal.fx",
+
+  "input_layouts": {
+    "decal_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "float3"
+      },
+      {
+        "semantic": {
+          "name": "COLOR",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "float2"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "decal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "decal_input",
+
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "diffuse_ps": {
+      "stage": "pixel"
+    },
+
+    "diffuse_bump_ps": {
+      "stage": "pixel"
+    },
+
+    "bump_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {
+    "decal": {}
+  },
+
+  "states": {
+    "diffuse": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "decal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_ps"
+      }
+    },
+
+    "diffuse bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "decal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "diffuse_bump_ps"
+      }
+    },
+
+    "bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "decal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bump_ps"
+      }
+    }
+  }
+}

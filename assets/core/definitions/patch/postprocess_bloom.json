@@ -1,0 +1,46 @@
+{
+  "group_name": "postprocess_bloom",
+  "source_name": "postprocess_bloom.fx",
+
+  "entrypoints": {
+    "downsample_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
+        [ "FILM_GRAIN_ACTIVE", "false" ],
+        [ "FILM_GRAIN_COLORED", "false" ]
+      ]
+    },
+
+    "upsample_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
+        [ "FILM_GRAIN_ACTIVE", "false" ],
+        [ "FILM_GRAIN_COLORED", "false" ]
+      ]
+    },
+
+    "threshold_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "BLOOM_ACTIVE", "false" ],
+        [ "BLOOM_USE_DIRT", "false" ],
+        [ "VIGNETTE_ACTIVE", "false" ],
+        [ "FILM_GRAIN_ACTIVE", "false" ],
+        [ "FILM_GRAIN_COLORED", "false" ]
+      ]
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

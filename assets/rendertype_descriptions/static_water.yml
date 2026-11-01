@@ -1,0 +1,85 @@
+Overridden RenderType: normal
+Constant Buffer Name: static_water
+
+Material Options:
+   Transparent: yes
+   Hard Edged: no
+
+Properties:
+   RefractionColor:
+      Type: vec3
+      Default: [0.25, 0.50, 0.75]
+      Range: [0.0, 2048.0]
+      
+   BackRefractionColor:
+      Type: vec3
+      Default: [0.25, 0.50, 0.75]
+      Range: [0.0, 2048.0]
+      
+   ReflectionColor:
+      Type: vec3
+      Default: [0.25, 0.50, 0.75]
+      Range: [0.0, 2048.0]
+
+   RefractionScale:
+      Type: float
+      Default: 0.1333
+      Range: [-2048.0, 2048.0]
+
+   SmallBumpScale:
+      Type: float
+      Default: 0.25
+      Range: [0.0, 2048.0]
+
+   MediumBumpScale:
+      Type: float
+      Default: 0.25
+      Range: [0.0, 2048.0]
+
+   LargeBumpScale:
+      Type: float
+      Default: 0.25
+      Range: [0.0, 2048.0]
+
+   SmallScroll:
+      Type: vec2
+      Default: [0.2, 0.2]
+      Range: [-2048.0, 2048.0]
+
+   MediumScroll:
+      Type: vec2
+      Default: [0.2, 0.2]
+      Range: [-2048.0, 2048.0]
+
+   LargeScroll:
+      Type: vec2
+      Default: [0.2, 0.2]
+      Range: [-2048.0, 2048.0]
+
+   UseSpecularLighting:
+      Type: bool
+      Default: false
+
+   SpecularExponentDirLights:
+      Type: float
+      Default: 64.0
+      Range: [1.0, 4096.0]
+      
+   SpecularStrengthDirLights:
+      Type: float
+      Default: 1.0
+      Range: [0.0, 2048.0]
+      
+   SpecularExponent:
+      Type: float
+      Default: 64.0
+      Range: [1.0, 4096.0]
+
+   FresnelMinMax:
+      Type: vec2
+      Default: [0.0, 1.0]
+      Range: [0.0, 1.0]
+      
+Resource Properties:
+   NormalMap:
+   ReflectionMap:

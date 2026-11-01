@@ -1,0 +1,528 @@
+{
+  "group_name": "stencilshadow",
+  "source_name": "stencilshadow.fx",
+
+  "input_layouts": {
+    "preextended_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "float3"
+      }
+    ],
+
+    "extend_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "float4"
+      }
+    ],
+
+    "extend_hardskin_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "float4"
+      }
+    ],
+
+    "extend_hardskin_gen_normal_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 1
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 2
+        },
+        "format": "sint4"
+      }
+    ],
+
+    "extend_softskin_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "NORMAL",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 1
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 1
+        },
+        "format": "float4"
+      }
+    ],
+
+    "extend_softskin_gen_normal_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 0
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 1
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 1
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 1
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 2
+        },
+        "format": "sint4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDWEIGHT",
+          "index": 2
+        },
+        "format": "float4"
+      },
+      {
+        "semantic": {
+          "name": "BLENDINDICES",
+          "index": 2
+        },
+        "format": "float4"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "preextended_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "preextended_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_directional_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_directional_hardskin_facenormal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_hardskin_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_directional_hardskin_gen_normal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_hardskin_gen_normal_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_directional_softskin_facenormal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_softskin_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_directional_softskin_gen_normal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_softskin_gen_normal_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_point_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_point_hardskin_facenormal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_hardskin_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_point_hardskin_gen_normal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_hardskin_gen_normal_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_point_softskin_facenormal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_softskin_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "extend_point_softskin_gen_normal_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "extend_softskin_gen_normal_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "shadow_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "stencilshadow": {} },
+
+  "states": {
+    "cpu pre-extended": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "preextended_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional unskinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional hard skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_hardskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional hard skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_hardskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional soft skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_softskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend directional soft skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_directional_softskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point unskinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point hard skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_hardskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point hard skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_hardskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point soft skinned": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_softskin_facenormal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    },
+
+    "extend point soft skinned generate normal": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "extend_point_softskin_gen_normal_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shadow_ps"
+      }
+    }
+  }
+}

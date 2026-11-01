@@ -1,0 +1,52 @@
+name: Bug report
+description: A crash, something drawn wrong, controls not working, ...
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The mod writes a log of every game start to
+        **`GameData\bf2vr_logs`** (the folder with `BattlefrontII.exe`). Files are named by
+        the date and time the game started; a crash also leaves a `.dmp` file with the same name.
+        Please attach the log of the run where the problem happened **before starting the game
+        many more times** (only the last 10 are kept).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, what you expected, and roughly at what time (log lines have the time).
+    validations:
+      required: true
+  - type: input
+    id: map
+    attributes:
+      label: Map and mode
+      placeholder: Hoth, XL / Conquest / Galactic Conquest ...
+    validations:
+      required: true
+  - type: input
+    id: character
+    attributes:
+      label: What you were playing
+      placeholder: clone trooper, Vader, AT-AT, turret, starfighter ...
+  - type: input
+    id: headset
+    attributes:
+      label: Headset and how it's connected
+      placeholder: Quest 3 via Steam Link / Virtual Desktop / Link cable, Index, Reverb G2 ...
+    validations:
+      required: true
+  - type: input
+    id: mods
+    attributes:
+      label: Other mods installed
+      placeholder: Conversion Pack 2.2, ... (or none)
+  - type: textarea
+    id: files
+    attributes:
+      label: Log and crash dump
+      description: |
+        Drag the `.log` file from `GameData\bf2vr_logs` here, and the `.dmp` with the same name
+        if there is one (zip it if GitHub refuses the file).
+    validations:
+      required: true

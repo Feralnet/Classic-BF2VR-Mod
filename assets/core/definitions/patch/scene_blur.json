@@ -1,0 +1,18 @@
+{
+  "group_name": "scene blur",
+  "source_name": "scene_blur.fx",
+
+  "entrypoints": {
+    "blur_ps": {
+      "stage": "pixel"
+    },
+
+    "overlay_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

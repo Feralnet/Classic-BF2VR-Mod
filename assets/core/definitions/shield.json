@@ -1,0 +1,52 @@
+{
+  "group_name": "shield",
+  "source_name": "shield.fx",
+
+  "entrypoints": {
+    "shield_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "shield_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_shield_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "shield": {} },
+
+  "states": {
+    "shield": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "shield_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "shield_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_shield_ps"
+      }
+    }
+  }
+}

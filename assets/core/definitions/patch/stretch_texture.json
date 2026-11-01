@@ -1,0 +1,26 @@
+{
+  "group_name": "stretch_texture",
+  "source_name": "stretch_texture.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      }
+    },
+
+    "main_ps": {
+      "stage": "pixel"
+    },
+
+    "main_ms_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

@@ -1,0 +1,489 @@
+{
+  "group_name": "perpixeldiffuselighting",
+  "source_name": "perpixeldiffuselighting.fx",
+
+  "entrypoints": {
+    "perpixel_vs": {
+      "stage": "vertex",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "perpixel_spotlight_vs": {
+      "stage": "vertex",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "normalmapped_vs": {
+      "stage": "vertex",
+
+      "defines": [
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "0" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": true,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "normalmapped_generate_tangents_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_vs",
+
+      "defines": [
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "normalmapped_generate_tangents_texcoords_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_vs",
+
+      "defines": [
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "1" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "normalmapped_spotlight_vs": {
+      "stage": "vertex",
+
+      "defines": [
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "0" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": true,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "normalmapped_spotlight_generate_tangents_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_spotlight_vs",
+
+      "defines": [
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "normalmapped_spotlight_generate_tangents_texcoords_vs": {
+      "stage": "vertex",
+      "function_name": "normalmapped_spotlight_vs",
+
+      "defines": [
+        [ "PERPIXEL_LIGHT_COUNT", "0" ],
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "0" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "1" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "perpixel_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "3" ]
+      ]
+    },
+
+    "perpixel_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "2" ]
+      ]
+    },
+
+    "perpixel_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "perpixel_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "1" ]
+      ]
+    },
+
+    "normalmapped_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "3" ]
+      ]
+    },
+
+    "normalmapped_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "2" ]
+      ]
+    },
+
+    "normalmapped_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "normalmapped_ps",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "1" ]
+      ]
+    },
+
+    "perpixel_spotlight_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
+      ]
+    },
+
+    "normalmapped_spotlight_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "PERPIXEL_GENERATE_TEXCOORDS", "false" ],
+        [ "PERPIXEL_GENERATE_TANGENTS", "false" ],
+        [ "PERPIXEL_LIGHT_COUNT", "0" ]
+      ]
+    }
+  },
+
+  "rendertypes": { "perpixeldiffuselighting": {} },
+
+  "states": {
+    "perpixel 3 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_3lights_ps"
+      }
+    },
+
+    "perpixel 2 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_2lights_ps"
+      }
+    },
+
+    "perpixel 1 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_1lights_ps"
+      }
+    },
+
+    "perpixel spotlight": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "perpixel_spotlight_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "perpixel_spotlight_ps"
+      }
+    },
+
+    "normalmapped 3 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_3lights_ps"
+      }
+    },
+
+    "normalmapped 2 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_2lights_ps"
+      }
+    },
+
+    "normalmapped 1 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_1lights_ps"
+      }
+    },
+
+    "normalmapped 3 lights (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_3lights_ps"
+      }
+    },
+
+    "normalmapped 2 lights (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_2lights_ps"
+      }
+    },
+
+    "normalmapped 1 lights (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_1lights_ps"
+      }
+    },
+
+    "normalmapped 3 lights (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_3lights_ps"
+      }
+    },
+
+    "normalmapped 2 lights (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_2lights_ps"
+      }
+    },
+
+    "normalmapped 1 lights (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_1lights_ps"
+      }
+    },
+
+    "normalmapped spotlight": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_spotlight_vs",
+
+        "static_flags": {
+          "PERPIXEL_GENERATE_TEXCOORDS": false,
+          "PERPIXEL_GENERATE_TANGENTS": false
+        }
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_spotlight_ps"
+      }
+    },
+
+    "normalmapped spotlight (generate tangents)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_spotlight_generate_tangents_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_spotlight_ps"
+      }
+    },
+
+    "normalmapped spotlight (generate tangents & texcoords)": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_spotlight_generate_tangents_texcoords_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_spotlight_ps"
+      }
+    }
+  }
+}

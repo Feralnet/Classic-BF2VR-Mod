@@ -1,0 +1,240 @@
+{
+  "group_name": "specularlighting",
+  "source_name": "specularlighting.fx",
+
+  "entrypoints": {
+    "blinn_phong_vs": {
+      "stage": "vertex",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "normalmapped_vs": {
+      "stage": "vertex",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ],
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": true,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "debug_vertexlit_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ]
+    },
+
+    "blinn_phong_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "3" ]
+      ]
+    },
+
+    "blinn_phong_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "2" ]
+      ]
+    },
+
+    "blinn_phong_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "1" ]
+      ]
+    },
+
+    "oit_blinn_phong_3lights_ps": {
+      "stage": "pixel",
+      "function_name": "oit_blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "3" ]
+      ]
+    },
+
+    "oit_blinn_phong_2lights_ps": {
+      "stage": "pixel",
+      "function_name": "oit_blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "2" ]
+      ]
+    },
+
+    "oit_blinn_phong_1lights_ps": {
+      "stage": "pixel",
+      "function_name": "oit_blinn_phong_ps",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "1" ]
+      ]
+    },
+
+    "normalmapped_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ]
+    },
+
+    "oit_normalmapped_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ]
+    },
+
+    "normalmapped_envmap_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ]
+    },
+
+    "oit_normalmapped_envmap_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SPECULAR_LIGHT_COUNT", "0" ]
+      ]
+    }
+  },
+
+  "rendertypes": { "specularlighting": {} },
+
+  "states": {
+    "vertex lit specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "debug_vertexlit_ps"
+      }
+    },
+
+    "specular 3 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blinn_phong_3lights_ps"
+      },
+      
+      "pixel_oit_shader": {
+        "entrypoint": "oit_blinn_phong_3lights_ps"
+      }
+    },
+
+    "specular 2 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blinn_phong_2lights_ps"
+      },
+      
+      "pixel_oit_shader": {
+        "entrypoint": "oit_blinn_phong_2lights_ps"
+      }
+    },
+
+    "specular 1 lights": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "blinn_phong_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "blinn_phong_1lights_ps"
+      },
+      
+      "pixel_oit_shader": {
+        "entrypoint": "oit_blinn_phong_1lights_ps"
+      }
+    },
+
+    "specular normalmapped": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_ps"
+      },
+      
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normalmapped_ps"
+      }
+    },
+
+    "normalmapped reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normalmapped_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normalmapped_envmap_ps"
+      },
+      
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normalmapped_envmap_ps"
+      }
+    }
+  }
+}

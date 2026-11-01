@@ -1,0 +1,330 @@
+{
+  "group_name": "water",
+  "source_name": "water.fx",
+
+  "entrypoints": {
+    "discard_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "normal_map_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "transmissive_pass_fade_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "lowquality_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "discard_ps": {
+      "stage": "pixel"
+    },
+
+    "normal_map_distorted_reflection_ps": {
+      "stage": "pixel"
+    },
+
+    "normal_map_distorted_reflection_specular_ps": {
+      "stage": "pixel"
+    },
+
+    "normal_map_specular_ps": {
+      "stage": "pixel"
+    },
+
+    "normal_map_ps": {
+      "stage": "pixel"
+    },
+
+    "transmissive_pass_fade_ps": {
+      "stage": "pixel"
+    },
+
+    "lowquality_specular_ps": {
+      "stage": "pixel"
+    },
+
+    "lowquality_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_normal_map_distorted_reflection_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_normal_map_distorted_reflection_specular_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_normal_map_specular_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_normal_map_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_transmissive_pass_fade_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_lowquality_specular_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_lowquality_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "water": {} },
+
+  "states": {
+    "discard": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "discard_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "discard_ps"
+      }
+    },
+
+    "transmissive fade": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "transmissive_pass_fade_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "transmissive_pass_fade_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_transmissive_pass_fade_ps"
+      }
+    },
+
+    "projective bumpmap with distorted reflection with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_specular_ps"
+      }
+    },
+
+    "projective bumpmap with distorted reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_ps"
+      }
+    },
+
+    "projective bumpmap without distortion with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_specular_ps"
+      }
+    },
+
+    "normal map without distortion": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_ps"
+      }
+    },
+
+    "normal map with reflection with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_specular_ps"
+      }
+    },
+
+    "normal map with reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_distorted_reflection_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_distorted_reflection_ps"
+      }
+    },
+
+    "normal map without reflection with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_specular_ps"
+      }
+    },
+
+    "normal map without reflection": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "normal_map_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "normal_map_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_normal_map_ps"
+      }
+    },
+
+    "low quality with specular": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "lowquality_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "lowquality_specular_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_lowquality_specular_ps"
+      }
+    },
+
+    "low quality": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "lowquality_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "lowquality_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_lowquality_ps"
+      }
+    }
+  }
+}

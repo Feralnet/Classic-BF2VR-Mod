@@ -1,0 +1,55 @@
+{
+  "group_name": "sample",
+  "source_name": "sample.fx",
+
+  "input_layouts": {
+    "sample_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "sint4"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "sample_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "sample_input",
+
+        "generic_input": {
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "sample_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "sample": {} },
+
+  "states": {
+    "sample": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "sample_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "sample_ps"
+      }
+    }
+  }
+}

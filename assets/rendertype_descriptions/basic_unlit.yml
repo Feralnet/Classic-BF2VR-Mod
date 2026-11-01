@@ -1,0 +1,19 @@
+Overridden RenderType: normal
+Constant Buffer Name: basic_unlit
+
+Material Options:
+   Unlit: yes
+
+Properties:
+   UseEmissiveMap:
+      Type: bool
+      Default: false
+
+   EmissivePower:
+      Type: float
+      Default: 0.0
+      Range: [-2048.0, 2048.0]
+
+Resource Properties:
+   ColorMap:
+   EmissiveMap:

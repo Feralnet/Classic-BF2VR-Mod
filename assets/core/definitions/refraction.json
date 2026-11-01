@@ -1,0 +1,200 @@
+{
+  "group_name": "refraction",
+  "source_name": "refraction.fx",
+
+  "entrypoints": {
+    "far_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "nodistortion_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "distortion_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": true,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "nodistortion_ps": {
+      "stage": "pixel"
+    },
+
+    "near_ps": {
+      "stage": "pixel"
+    },
+
+    "near_bump_ps": {
+      "stage": "pixel"
+    },
+
+    "near_diffuse_ps": {
+      "stage": "pixel"
+    },
+
+    "near_diffuse_bump_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_nodistortion_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_near_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_near_bump_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_near_diffuse_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_near_diffuse_bump_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "refraction": {} },
+
+  "states": {
+    "far": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "far_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "nodistortion_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_nodistortion_ps"
+      }
+    },
+
+    "nodistortion": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "nodistortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "nodistortion_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_nodistortion_ps"
+      }
+    },
+
+    "near": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_near_ps"
+      }
+    },
+
+    "near bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_bump_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_near_bump_ps"
+      }
+    },
+
+    "near diffuse": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_diffuse_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_near_diffuse_ps"
+      }
+    },
+
+    "near diffuse bump": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "distortion_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "near_diffuse_bump_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_near_diffuse_bump_ps"
+      }
+    }
+  }
+}

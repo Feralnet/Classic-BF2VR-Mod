@@ -1,0 +1,74 @@
+{
+  "group_name": "ocean",
+  "source_name": "ocean.fx",
+
+  "entrypoints": {
+    "far_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "near_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": true,
+          "tangents": false,
+          "color": true,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "main_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "ocean": {} },
+
+  "states": {
+    "far ocean": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "far_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    },
+
+    "near ocean": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "near_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "main_ps"
+      }
+    }
+  }
+}

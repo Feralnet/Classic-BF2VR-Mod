@@ -1,0 +1,98 @@
+{
+  "group_name": "late_backbuffer_resolve",
+  "source_name": "late_backbuffer_resolve.fx",
+
+  "entrypoints": {
+    "main_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto"
+      },
+
+      "defines": [
+        [ "SAMPLE_COUNT", "1" ]
+      ]
+    },
+
+    "main_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "1" ]
+      ]
+    },
+
+    "main_x2_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_ms_ps",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "2" ]
+      ]
+    },
+
+    "main_x4_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_ms_ps",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "4" ]
+      ]
+    },
+
+    "main_x8_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_ms_ps",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "8" ]
+      ]
+    },
+
+    "main_linear_ps": {
+      "stage": "pixel",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "1" ]
+      ]
+    },
+
+    "main_linear_x2_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_linear_ms_ps",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "2" ]
+      ]
+    },
+
+    "main_linear_x4_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_linear_ms_ps",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "4" ]
+      ]
+    },
+
+    "main_linear_x8_ps": {
+      "stage": "pixel",
+
+      "function_name": "main_linear_ms_ps",
+
+      "defines": [
+        [ "SAMPLE_COUNT", "8" ]
+      ]
+    }
+  },
+
+  "rendertypes": {},
+
+  "states": {}
+}

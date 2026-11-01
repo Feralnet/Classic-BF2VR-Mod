@@ -1,0 +1,52 @@
+{
+  "group_name": "rain",
+  "source_name": "rain.fx",
+
+  "entrypoints": {
+    "rain_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "$auto",
+
+        "generic_input": {
+          "dynamic_compression": true,
+          "position": true,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": true,
+          "texture_coords": false
+        }
+      }
+    },
+
+    "rain_ps": {
+      "stage": "pixel"
+    },
+
+    "oit_rain_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": { "rain": {} },
+
+  "states": {
+    "rain": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "rain_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "rain_ps"
+      },
+
+      "pixel_oit_shader": {
+        "entrypoint": "oit_rain_ps"
+      }
+    }
+  }
+}

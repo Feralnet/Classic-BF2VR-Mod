@@ -1,0 +1,113 @@
+{
+  "group_name": "bloom_stock",
+  "source_name": "bloom_stock.fx",
+
+  "input_layouts": {
+    "bloom_input": [
+      {
+        "semantic": {
+          "name": "POSITION",
+          "index": 0
+        },
+        "format": "float2"
+      },
+      {
+        "semantic": {
+          "name": "TEXCOORD",
+          "index": 0
+        },
+        "format": "float2"
+      }
+    ]
+  },
+
+  "entrypoints": {
+    "screenspace_vs": {
+      "stage": "vertex",
+
+      "vertex_state": {
+        "input_layout": "bloom_input",
+
+        "generic_input": {
+          "dynamic_compression": false,
+          "position": false,
+          "skinned": false,
+          "normal": false,
+          "tangents": false,
+          "color": false,
+          "texture_coords": true
+        }
+      }
+    },
+
+    "glowthreshold_ps": {
+      "stage": "pixel"
+    },
+
+    "luminance_ps": {
+      "stage": "pixel"
+    },
+
+    "bloomfilter_ps": {
+      "stage": "pixel"
+    },
+
+    "screenspace_ps": {
+      "stage": "pixel"
+    }
+  },
+
+  "rendertypes": {
+    "hdr": {}
+  },
+
+  "states": {
+    "glow threshold": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "screenspace_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "glowthreshold_ps"
+      }
+    },
+
+    "luminance": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "screenspace_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "luminance_ps"
+      }
+    },
+
+    "bloomfilter": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "screenspace_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "bloomfilter_ps"
+      }
+    },
+
+    "screenspace": {
+      "type": "standard",
+
+      "vertex_shader": {
+        "entrypoint": "screenspace_vs"
+      },
+
+      "pixel_shader": {
+        "entrypoint": "screenspace_ps"
+      }
+    }
+  }
+}
