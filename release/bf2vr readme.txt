@@ -10,14 +10,12 @@ Lucasfilm, Disney, EA or Aspyr. It contains no game files.
 
 Requirements
 ------------
-- Star Wars Battlefront II (Classic, 2005), Steam or GOG.
-- Unofficial v1.3 Patch r130 (UOP), installed BEFORE this mod.
-  This build of the mod is made against the game program that UOP r130
-  installs; with the game's original BattlefrontII.exe parts of the VR
-  (camera, hands, melee) switch themselves off.
-- The game's BattlefrontII.exe marked Large Address Aware (the well known
-  "4GB patch"). Without it the game can run out of memory in VR.
+- Star Wars Battlefront II (Classic, 2005), Steam or GOG, as it installs.
+  Nothing else is needed: no Unofficial 1.3 Patch, no "4GB patch".
+  (The mod also works on top of the Unofficial 1.3 Patch r130.)
 - An OpenXR runtime (SteamVR or your headset's PC app) set as the active one.
+
+Not supported: the Aspyr "Classic Collection" (2024, 64-bit) version.
 
 Install
 -------
@@ -37,7 +35,8 @@ Reporting problems
 Every start of the game writes a log to GameData\bf2vr_logs, named by the
 date and time the game started (the last 10 are kept). If the game crashes,
 a .dmp file with the same name is written next to that run's log.
-To report a problem, open an issue on the mod's GitHub page and attach that
+To report a problem, open an issue on the mod's GitHub page
+(https://github.com/addvans/Classic-BF2VR-Mod/issues) and attach that
 run's .log (and .dmp, if any). bf2vr_logs\README.txt says what they contain.
 Nothing is ever sent anywhere by the mod.
 

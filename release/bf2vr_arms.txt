@@ -1,0 +1,8 @@
+# First-person model corrections: model (its parts' sizes), then the right and
+# left hand's grip offsets in the game camera's view space (metres, x right,
+# y up, -z forward), then whether the weapon is also drawn mirrored, the
+# mirror's axis (0 x, 1 y, 2 z of the part), the copy's shift (metres along
+# the part's x, y, z) and scale, then the parts the right and left hand hold
+# (p and a bit mask: 1 the weapon, 2 the second biggest part, 4 the third...;
+# p-1 = the defaults), then m and where the shots start moved from the
+# barrel tip (metres: right, up, back). Tuned in the VR panel.

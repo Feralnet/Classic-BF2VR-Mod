@@ -17,10 +17,9 @@ headset. Infantry first; vehicles and starfighters come later.
 Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` inside it
 (the same text as [`release/bf2vr readme.txt`](release/bf2vr%20readme.txt)). In short:
 
-- Star Wars Battlefront II (Classic, 2005), Steam or GOG — the 32-bit game, not the
-  Classic Collection.
-- The Unofficial v1.3 Patch r130 (UOP), installed before this mod.
-- `BattlefrontII.exe` marked Large Address Aware ("4GB patch").
+- Star Wars Battlefront II (Classic, 2005), Steam or GOG, as it installs — the 32-bit
+  game, not the Classic Collection. No Unofficial 1.3 Patch or "4GB patch" needed (the
+  mod also works on top of UOP r130).
 - An OpenXR runtime set as active (SteamVR or your headset's PC app).
 
 Problems: open a [bug report](../../issues/new?template=bug_report.yml) and attach the
@@ -70,15 +69,22 @@ which takes a while):
 
 `vcpkg-configuration.json` points vcpkg at the `sol2` overlay automatically.
 
-`data\shaderpatch\core.lvl` is unchanged from Shader Patch v1.11.2. Take it from the
-official release, or build the `core` project of `shader_patch.sln` (it builds the x64
-`lvl_pack` and `texture_munge` tools first).
+Then pack the release zip (`packages\CBF2VR.zip`, unpacked by players into `GameData`):
 
-A release zip holds, relative to `GameData`: `d3d9.dll`, `d3dcompiler_47.dll`,
-`openxr_loader.dll` (32-bit, from the [OpenXR SDK](https://github.com/KhronosGroup/OpenXR-SDK/releases)),
-`shader patch.yml`, `data\shaderpatch\core.lvl`, `data\shaderpatch\shaders\` (from
-`assets\core\definitions` and `assets\core\src`), `data\shaderpatch\scripts\` (from
-`assets\scripts`), and the license files below.
+```powershell
+.\scripts\package.ps1 -OpenXrLoader <path>\openxr_loader.dll -TexturesLvl <path>\textures.lvl
+```
+
+- `openxr_loader.dll` — the 32-bit (`Win32`) loader from the
+  [OpenXR SDK releases](https://github.com/KhronosGroup/OpenXR-SDK/releases) (1.1.65 is used).
+- `textures.lvl` — `data\shaderpatch\textures.lvl`, unchanged from Shader Patch v1.11.2:
+  take it from the official release, or build the `core` project of `shader_patch.sln`
+  (it builds the x64 `lvl_pack` and `texture_munge` tools first).
+- `d3dcompiler_47.dll` is taken from the Windows SDK's `Redist\D3D\x86`.
+
+Everything else comes from the repository: `release\` (readme, default HUD layout,
+license of the loader), `assets\shader patch.yml`, `assets\core\definitions` and
+`assets\core\src` (shaders, compiled by the mod at first start) and `assets\scripts`.
 
 ## License
 

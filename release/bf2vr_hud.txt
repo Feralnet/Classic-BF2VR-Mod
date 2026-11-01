@@ -1,0 +1,21 @@
+# bf2vr wrist HUD. Lines starting with anything unrecognised are ignored.
+#
+# Regions of the game's screen moved to the wrists: name u0 v0 u1 v1
+# (fractions of the screen, 0 0 = top left, 1 1 = bottom right).
+status     0.000 0.760 0.230 0.960
+score_blue 0.250 0.060 0.400 0.170
+score_red  0.600 0.060 0.750 0.170
+messages   0.000 0.560 0.320 0.760
+map        0.845 0.050 0.995 0.285
+capture    0.845 0.290 0.995 0.370
+#
+# Panels on top of the wrists: name width back up side (metres; centre from the
+# controller's aim pose: back = towards the elbow, up = controller top, side =
+# controller right).
+# left_up = score, messages, health/ammo; right_up = minimap, command post capture.
+left_up    0.12 0.16 0.03 0.0
+right_up   0.08 0.16 0.03 0.0
+#
+# The crosshair's region: drawn along the gun instead of in front of the eyes
+# (distance, height and rotation in the VR panel).
+crosshair  0.440 0.410 0.560 0.590

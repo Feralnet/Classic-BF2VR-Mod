@@ -77,7 +77,7 @@ Display:
 
    # Enables the overriding the resolution the game will be rendered at to a percentage of the
    # monitor's resolution. This is mostly intended for use with modtools' debug .exe.
-   Override Resolution: no
+   Override Resolution: yes
 
    # When Override Resolution is enabled the percentage of the screen the game's window will take up.
    Override Resolution Screen Percent: 100
