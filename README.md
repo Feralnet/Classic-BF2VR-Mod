@@ -22,6 +22,54 @@ Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` i
   mod **also** works on top of UOP r130).
 - An OpenXR runtime set as active (SteamVR or your headset's PC app).
 
+## Controls (Meta Quest 3 / Touch controllers)
+
+The buttons press the keys bound in your game profile, so rebinding in the game's own
+Controls screen still works.
+
+### On foot
+
+| Controller | Action |
+|---|---|
+| Right trigger | Fire |
+| Left trigger | Secondary fire. Grenades: hold, swing the left hand, let go to throw |
+| Left stick | Move |
+| Left stick click | Sprint (until the stick is let go; can be set to "hold") |
+| Right stick left / right | Snap turn (smooth turn in the VR panel) |
+| Right stick up / down | Next primary / secondary weapon; with the scope up: change scope zoom |
+| Right stick click | Crouch (crouch while strafing to roll) |
+| A | Reload; hold 0.5 s: lock target |
+| B | Jump |
+| X | Use / enter vehicle / change class at a command post; Enter in menus |
+| Y | Pause; hold 0.5 s in a match: VR settings panel |
+| Left menu button (≡) | Squad command |
+| Left grip | Hold the weapon with both hands |
+| Right grip | Scope (hold; double press: next zoom) |
+| Both grips (lightsaber) | Block |
+| Raise the gun to your eye | Scope comes up by itself |
+| Fast jab or swing with the gun | Melee hit (weapon bash) |
+| Crouch in your room | Soldier crouches (standing mode) |
+| Free hand's grip at the weapon | Swap the weapon to that hand |
+
+### Vehicles and starfighters
+
+| Controller | Ground vehicle | Starfighter |
+|---|---|---|
+| Right / left trigger | Primary / secondary fire | Primary / secondary fire |
+| Left stick | Drive | Throttle and roll |
+| Left stick click | Boost | Boost |
+| Right stick | Steer / aim | Pitch and turn |
+| Right stick click | Droideka: roll up / deploy | Trick |
+| Right grip (hold) | Zoom | Roll lock |
+| A | Reload; hold: lock target | Reload; hold: lock target |
+| B | Jump | Land / take off |
+| X | Exit | Exit |
+| Y | Pause; hold: VR panel | Pause; hold: VR panel |
+| Left grip + right stick up / down | Next / previous seat | Next / previous seat |
+| Left grip + right stick click | First / third person view | First / third person view |
+| Left grip + B | — | Immelmann |
+| Left grip + Y | Map (while held) | Map (while held) |
+
 ## Feedback
 
 Feel free to share bugs/errors on a [bug report](../../issues/new?template=bug_report.yml) and attach the
@@ -30,6 +78,24 @@ log from `GameData\bf2vr_logs`. The mod never sends anything anywhere.
 Drop in Discord for chat: https://discord.gg/jmeSQ5SVjb
 
 Oh, and buy me a Ko-Fi! https://ko-fi.com/addvans
+
+## Known Issues
+
+So far there are recognizable issues:
+
+- Lightsaber sound is annoying. While not technically a bug, it is on a to-do list.
+- Big maps (Hoth XL mode, Kashyyk XL mode) can cause rendering issues and crashes.
+- B2 Battle Droid arm can fire off crosshair sometimes.
+- Small characters (Ewoks, Jawas, Yoda) can cause units and/or stationary droids to render incorrectly.
+- Some characters hands have wrong positioning. See "Setting up hands" for more.
+- Droidekas and vehicles have theater mode type rendering. This is not an issue, but something to be implemented later.
+- There could be many unnoticed issues yet, as this is a new field for me. Feedback is greatly appreciated.
+
+## Setting up hands
+
+Most units have hands set up relatively correct. That being said, mod automatically get weapon model and uses "left" and "right" hands for rendering. With that in mind, some characters have their hands calculated wrong, like Fusion Cutters, Leia Organa's hands (for some reason), and many more.
+
+Mod has built-in hands editor. While holding the weapon that needs to be adjusted, hold Pause Button to open up VR Settings menu mid-match. Editor offers the ability to switch which parts of the model renders on the left & right hands separately, as well as the ability to add XYZ offsets to models to better match controller positions. There's also function to mirror weapon model to render Clones weapons properly, as some of them are only one-side rendered.
 
 ## How it is built
 
