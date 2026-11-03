@@ -14,10 +14,14 @@ headset. Infantry first; vehicles and starfighters come later.
 
 ## Playing
 
-Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` inside it
-(the same text as [`release/bf2vr readme.txt`](release/bf2vr%20readme.txt)). In short:
+> [!WARNING]
+> **Steam version only.** The mod supports **Star Wars Battlefront II (Classic, 2005) from Steam** only.
+> Other copies (the old 2006 GOG installer, cracked or repacked games) use a different
+> `BattlefrontII.exe`: the game will show an error message and close. **Steam Classic Battlefront 2 2005 is required.**
 
-- Star Wars Battlefront II (Classic, 2005), Steam or GOG, as it installs — the 32-bit
+Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` inside it. In short:
+
+- Star Wars Battlefront II (Classic, 2005), Steam as it installs — the 32-bit
   game, not the Classic Collection. No Unofficial 1.3 Patch or "4GB patch" needed (the
   mod **also** works on top of UOP r130).
 - An OpenXR runtime set as active (SteamVR or your headset's PC app).
