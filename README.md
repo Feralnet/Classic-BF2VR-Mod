@@ -17,7 +17,9 @@ headset. Infantry first; vehicles and starfighters come later.
 > [!WARNING]
 > **Steam version only.** The mod supports **Star Wars Battlefront II (Classic, 2005) from Steam** only.
 > Other copies (the old 2006 GOG installer, cracked or repacked games) use a different
-> `BattlefrontII.exe`: the game will show an error message and close, since its built different and requires a bunch of compatibilty patches to work. While GOG support is planned in the future, for now **Steam Classic Battlefront 2 2005 is required.** Please note that cracked or repacked games aren't and won't be supported.
+> `BattlefrontII.exe`: the game will show an error message and close, since its built different and requires a bunch of compatibilty patches to work. While GOG support is planned in the future, for now **Steam Classic Battlefront 2 2005 is required.**
+>
+> Please note that cracked or repacked games aren't and won't be supported.
 > Temporal soultion would be installing a Unofficial 1.3 Patch to make the mod compatible with its latest release, however this decision is up to player.
 
 Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` inside it. In short:
