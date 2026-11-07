@@ -22,7 +22,7 @@ headset. Infantry first; vehicles and starfighters come later.
 > Please note that cracked or repacked games aren't and won't be supported.
 > Temporal soultion would be installing a Unofficial 1.3 Patch to make the mod compatible with its latest release, however this decision is up to player.
 
-Download the zip from [Releases](../../releases) and follow `bf2vr readme.txt` inside it. In short:
+Download the zip from [Nexus](https://www.nexusmods.com/battlefront2/mods/1317) and follow `bf2vr readme.txt` inside it. In short:
 
 - Star Wars Battlefront II (Classic, 2005), Steam as it installs — the 32-bit
   game, not the Classic Collection. No Unofficial 1.3 Patch or "4GB patch" needed (the
