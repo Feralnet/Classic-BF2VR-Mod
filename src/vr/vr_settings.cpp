@@ -47,7 +47,7 @@ struct Entry {
    int* choice = nullptr;
 };
 
-auto entries() noexcept -> std::array<Entry, 65>
+auto entries() noexcept -> std::array<Entry, 75>
 {
    Settings& s = current_settings;
 
@@ -97,15 +97,25 @@ auto entries() noexcept -> std::array<Entry, 65>
                  reinterpret_cast<int*>(&s.vehicle_steer_mode)},
            Entry{"vehicle_stick_range", &s.vehicle_stick_range},
            Entry{"vehicle_steer_speed", &s.vehicle_steer_speed},
+           Entry{"droideka_rolled_view", nullptr, &s.droideka_rolled_view},
+           Entry{"droideka_first_person", nullptr, &s.droideka_first_person},
+           Entry{"droideka_eye_height", &s.droideka_eye_height},
+           Entry{"droideka_eye_forward", &s.droideka_eye_forward},
+           Entry{"droideka_hide_radius", &s.droideka_hide_radius},
            Entry{"gesture_throw", nullptr, &s.gesture_throw},
            Entry{"reload_bar_crosshair", nullptr, &s.reload_bar_crosshair},
            Entry{"reload_bar_wrist", nullptr, &s.reload_bar_wrist},
            Entry{"shake_cooling", &s.shake_cooling},
+           Entry{"cooling_haptics", nullptr, &s.cooling_haptics},
            Entry{"crosshair_distance", &s.crosshair_distance},
            Entry{"crosshair_shown", nullptr, &s.crosshair_shown},
            Entry{"crosshair_steady", nullptr, &s.crosshair_steady},
            Entry{"saber_swing_speed", &s.saber_swing_speed},
            Entry{"saber_swing_distance", &s.saber_swing_distance},
+           Entry{"saber_sound", nullptr, &s.saber_sound},
+           Entry{"saber_sound_volume", &s.saber_sound_volume},
+           Entry{"saber_sound_speed", &s.saber_sound_speed},
+           Entry{"saber_sound_interval", &s.saber_sound_interval},
            Entry{"saber_auto_block", nullptr, &s.saber_auto_block},
            Entry{"hand_swap", nullptr, &s.hand_swap},
            Entry{"hand_swap_keeps_rotation", nullptr, &s.hand_swap_keeps_rotation},
@@ -147,6 +157,13 @@ void clamp_settings() noexcept
    s.turret_eye_up = std::clamp(s.turret_eye_up, -1.0f, 1.0f);
    s.turret_eye_forward = std::clamp(s.turret_eye_forward, -1.0f, 1.0f);
    s.turret_hide_radius = std::clamp(s.turret_hide_radius, 0.0f, 5.0f);
+   s.droideka_eye_height = std::clamp(s.droideka_eye_height, 0.0f, 2.5f);
+   s.droideka_eye_forward = std::clamp(s.droideka_eye_forward, -2.0f, 2.0f);
+   s.droideka_hide_radius = std::clamp(s.droideka_hide_radius, 0.0f, 3.0f);
+#ifdef BF2VR_PUBLIC
+   // Not working yet: the public build keeps the rolled droideka on the game's camera.
+   s.droideka_first_person = false;
+#endif
    s.turret_hand_yaw = std::clamp(s.turret_hand_yaw, 0.0f, 60.0f);
    s.crosshair_distance = std::clamp(s.crosshair_distance, 1.0f, 50.0f);
    s.shake_cooling = std::clamp(s.shake_cooling, 1.0f, 10.0f);
@@ -157,6 +174,9 @@ void clamp_settings() noexcept
    s.vehicle_steer_speed = std::clamp(s.vehicle_steer_speed, 200.0f, 6000.0f);
    s.saber_swing_speed = std::clamp(s.saber_swing_speed, 3.0f, 12.0f);
    s.saber_swing_distance = std::clamp(s.saber_swing_distance, 0.0f, 0.5f);
+   s.saber_sound_volume = std::clamp(s.saber_sound_volume, 0.0f, 1.0f);
+   s.saber_sound_speed = std::clamp(s.saber_sound_speed, 3.0f, 15.0f);
+   s.saber_sound_interval = std::clamp(s.saber_sound_interval, 0.05f, 1.5f);
    s.bash_speed = std::clamp(s.bash_speed, 1.5f, 8.0f);
    s.bash_damage = std::clamp(s.bash_damage, 0.0f, 1000.0f);
    s.bash_push = std::clamp(s.bash_push, 0.0f, 12.0f);
@@ -649,6 +669,8 @@ auto draw_panel(ID3D11Device& device, ID3D11DeviceContext& dc, ID3D11RenderTarge
          changed |= ImGui::Checkbox("Quick reload bar on the right wrist", &s.reload_bar_wrist);
          changed |= slider("Overheated gun: cooling while shaken", s.shake_cooling, 1.0f,
                            10.0f, "%.1fx");
+         changed |= ImGui::Checkbox("Overheated gun: vibrates while it cools",
+                                    &s.cooling_haptics);
       }
 
       if (ImGui::CollapsingHeader("Weapon bash")) {
@@ -665,6 +687,15 @@ auto draw_panel(ID3D11Device& device, ID3D11DeviceContext& dc, ID3D11RenderTarge
          changed |= slider("Swing speed", s.saber_swing_speed, 3.0f, 12.0f, "%.1f m/s");
          changed |= slider("Swing length", s.saber_swing_distance, 0.0f, 0.5f, "%.2f m");
          changed |= ImGui::Checkbox("Auto block (bolts near the blade)", &s.saber_auto_block);
+         changed |= ImGui::Checkbox("Swing sound (the game's)", &s.saber_sound);
+
+         if (s.saber_sound) {
+            changed |= slider("Volume##saber_sound", s.saber_sound_volume, 0.0f, 1.0f, "%.2f");
+            changed |= slider("Sound from speed", s.saber_sound_speed, 3.0f, 15.0f, "%.1f m/s");
+            changed |= slider("Sound gap", s.saber_sound_interval, 0.05f, 1.5f, "%.2f s");
+            ImGui::TextWrapped("Slower swings are silent, faster ones louder. No sound sooner "
+                               "than the gap after the last; quick runs get quieter.");
+         }
          ImGui::TextWrapped("A swing hits once the blade's tip moves faster than the speed "
                             "for the length. Higher: fewer accidental hits.");
          changed |= ImGui::Checkbox("Draw hand arrow when rotating sword", &s.draw_hand_arrow);
@@ -712,6 +743,25 @@ auto draw_panel(ID3D11Device& device, ID3D11DeviceContext& dc, ID3D11RenderTarge
          else {
             changed |= slider("Steering speed", s.vehicle_steer_speed, 200.0f, 6000.0f, "%.0f");
          }
+
+         changed |= ImGui::Checkbox("Rolled-up droideka in the headset (not on the screen)",
+                                    &s.droideka_rolled_view);
+
+#ifndef BF2VR_PUBLIC
+         if (s.droideka_rolled_view) {
+            changed |= ImGui::Checkbox("Rolled droideka: first-person view",
+                                       &s.droideka_first_person);
+
+            if (s.droideka_first_person) {
+               changed |= slider("Droideka eye height", s.droideka_eye_height, 0.0f, 2.5f,
+                                 "%.2f m");
+               changed |= slider("Droideka eye forward", s.droideka_eye_forward, -2.0f, 2.0f,
+                                 "%.2f m");
+               changed |= slider("Hide own droideka within", s.droideka_hide_radius, 0.0f,
+                                 3.0f, "%.2f m");
+            }
+         }
+#endif
       }
 
       if (!status.bindings.empty() && ImGui::CollapsingHeader("Game keys")) {

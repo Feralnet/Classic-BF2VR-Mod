@@ -1,9 +1,11 @@
 
 #include "vr_system.hpp"
+#include "gog2006.hpp"
 #include "vr_hud_render.hpp"
 #include "vr_melee.hpp"
 #include "vr_post_render.hpp"
 #include "vr_saber_render.hpp"
+#include "vr_perf.hpp"
 #include "vr_settings.hpp"
 #include "vr_sound.hpp"
 #include "../logger.hpp"
@@ -217,6 +219,10 @@ constexpr float body_default_eye_height = 1.6f; // until the character is measur
 constexpr int body_lock_samples = 45;
 constexpr float body_max_camera_distance = 3.0f; // the soldier's farther: not the player's body
 constexpr float min_eye_above_feet = 0.15f;
+// Rolled droideka, first person: its origin further from the game camera isn't taken
+// (a stale read); its eye height eases over this long (the ball bounces).
+constexpr float droideka_max_camera_distance = 12.0f;
+constexpr float droideka_eye_smoothing_seconds = 0.12f;
 constexpr float min_body_fraction = 0.1f;
 constexpr float max_body_fraction = 1.15f;
 
@@ -320,6 +326,17 @@ constexpr float shake_step = 0.35f;
 constexpr float shake_fade_seconds = 0.6f;
 constexpr float shake_velocity_seconds = 0.03f;
 
+// The gun hand's vibration while an overheating gun cools (settings cooling_haptics):
+// from the base (cool) up by the heat, plus the shake's part at full shake; pulses of
+// cooling_buzz_interval back to back. Not within cooling_buzz_after_shot of a shot (the
+// gun heats then), except while it's overheated.
+constexpr float cooling_buzz_base = 0.06f;
+constexpr float cooling_buzz_heat = 0.10f;
+constexpr float cooling_buzz_shake = 0.4f;
+constexpr float cooling_buzz_interval = 0.05f;
+constexpr float cooling_buzz_after_shot = 0.3f;
+constexpr float cooling_buzz_min_heat = 0.02f;
+
 // Vehicle steering brake (vehicle_brake_counts): at most this long after letting go,
 // until the turn is slower than the stop rate (rad/s); the share of the turn countered
 // per second of mouse counts.
@@ -341,6 +358,12 @@ constexpr std::size_t player_body_max = 32;
 // dome): seen from the camera. The rest (distant buildings) stays put in the world: on a
 // turret seen from where the eyes are, not from the camera circling it.
 constexpr float far_scene_camera_centred = 2.0f;
+
+// With the game's far scene off (no draw in the far-scene depth buffer last frame) the
+// sky dome comes in the world pass: a draw whose object sits this close to the camera
+// is the dome, drawn from one point for both eyes like the far scene (with the eyes'
+// parallax the dome was a small ball in front of the player).
+constexpr float sky_dome_camera_distance = 0.1f;
 
 // Two-handed hold: the hands must be at least this far apart (metres) to steer the gun.
 constexpr float two_hand_min_distance = 0.1f;
@@ -762,6 +785,8 @@ struct State {
    bool shake_position_valid = false;
    float shake_level = 0.0f; // 0..1
    bool shake_cooling_logged = false;
+   float cooling_buzz_due = 0.0f; // seconds to the next cooling pulse
+   bool cooling_buzz_logged = false;
 
    // Comfort vignette: how strong it is now (eased), and a snap turn's flash.
    float vignette = 0.0f;
@@ -771,6 +796,7 @@ struct State {
    // Edge margin (see update_overscan): last head orientation and the margin now.
    bool overscan_orientation_valid = false;
    XrQuaternionf overscan_orientation{0.0f, 0.0f, 0.0f, 1.0f};
+   XrTime overscan_time = 0;
    float overscan_degrees = 0.0f;
 
    // The menu screen's pose (LOCAL space), placed in front of the head whenever the
@@ -909,6 +935,35 @@ struct State {
    // on (see update_input).
    bool vehicle_controls = false;
    glm::vec2 vehicle_steer_remainder{};
+
+   // Off the virtual screen after a vehicle (a droideka unrolled): the head's heading is
+   // mapped onto the game camera's on the next gameplay frame (see update_mouse_follow).
+   bool heading_after_vehicle = false;
+
+   // The player's droideka is rolled up (no first-person weapon pass for a while) and
+   // seen in the headset (setting droideka_rolled_view): gameplay with the vehicle
+   // controls, the tracking -> world mapping turning with the game camera's heading (last
+   // frame's, see follow_vehicle_heading).
+   bool droideka_rolled = false;
+   bool vehicle_heading_valid = false;
+   glm::vec3 vehicle_heading{};
+   glm::vec3 vehicle_heading_right{};
+   float vehicle_turned_degrees = 0.0f; // for the stats line
+
+   // Rolled up, the head moves from where it was as the droideka rolled up (tracking
+   // space), not from the recentre point: stepped or turned away from the room's centre,
+   // the eyes sat that far beside the game camera (turning round it with the droideka),
+   // and lower than at the recentre they looked under the floor. Re-latched by a recentre.
+   glm::vec3 droideka_reference{};
+   glm::vec3 droideka_reference_origin{};
+   // First person (setting droideka_first_person): the eyes over the droideka's origin,
+   // its height smoothed (the ball bounces); its own draws near that origin left out.
+   bool droideka_inside = false;
+   glm::vec3 droideka_position{};
+   float droideka_eye_y = 0.0f;
+   bool droideka_eye_y_valid = false;
+   bool droideka_logged = false;
+   std::uint32_t stat_droideka_hidden_draws = 0;
 
    // The game's control mode (melee::player_control_mode): the profile's control set the
    // controls press keys from. In a vehicle the left grip held is a second layer (see
@@ -1242,6 +1297,12 @@ struct State {
    bool cached_far_anchored = false;
    bool cached_hud = false;
    glm::vec3 cached_camera_position{};
+   glm::vec3 cached_world_camera_position{};
+   bool cached_world_camera = false;
+   // A far-scene draw this frame / last frame (see sky_dome_camera_distance).
+   bool frame_far_scene = false;
+   bool last_frame_far_scene = true;
+   bool sky_without_far_scene_logged = false;
    bool cached_valid = false;
    bool cached_in_hand = false;
    bool cached_weapon_pass = false;
@@ -2250,6 +2311,122 @@ void anchor_body(const Game_camera& camera, const melee::Player_soldier& soldier
 }
 
 void reset_body_measure() noexcept;
+void snap_turn(const float degrees) noexcept;
+
+auto head_tracking_midpoint() noexcept -> glm::vec3
+{
+   return (to_vec3(state.views[0].pose.position) + to_vec3(state.views[1].pose.position)) *
+          0.5f;
+}
+
+// A droideka just rolled up: the head's place now is the eyes' place at the game camera
+// (or in the droideka), and the head's heading turns onto the camera's, so the droideka
+// rolls the way the player looks.
+void latch_droideka_view() noexcept
+{
+   state.droideka_reference = head_tracking_midpoint();
+   state.droideka_reference_origin = state.tracking_origin;
+   state.droideka_eye_y_valid = false;
+   state.droideka_logged = false;
+
+   const glm::vec3 head_heading = horizontal(tracking_to_world(
+      rotate(state.views[0].pose.orientation, glm::vec3{0.0f, 0.0f, -1.0f})));
+   const glm::vec3 head_right = horizontal(tracking_to_world(
+      rotate(state.views[0].pose.orientation, glm::vec3{1.0f, 0.0f, 0.0f})));
+   const glm::vec3 camera_heading = horizontal(state.main_camera.forward);
+
+   if (state.main_camera_valid && head_heading != glm::vec3{} && head_right != glm::vec3{} &&
+       camera_heading != glm::vec3{}) {
+      const float angle = std::atan2(glm::dot(camera_heading, head_right),
+                                     glm::dot(camera_heading, head_heading));
+
+      snap_turn(glm::degrees(angle));
+
+      log_fmt(Log_level::info,
+              "VR: droideka rolled up: the head turned {:.0f} deg onto its heading, its place "
+              "the eyes' now ({:.2f} m from the recentre point, {:.2f} m higher).",
+              glm::degrees(angle),
+              glm::length(state.droideka_reference - state.tracking_origin),
+              state.droideka_reference.y - state.tracking_origin.y);
+   }
+}
+
+// Rolled droideka: the eyes at the game camera behind it, or in it (first person) at the
+// eye height over its origin. Only its heading turns the view (follow_vehicle_heading),
+// never the ball's roll.
+void anchor_droideka(const Game_camera& camera, const float dt) noexcept
+{
+   const Settings& s = settings();
+
+   // A recentre while rolled: the head's place is the new centre.
+   if (state.droideka_reference_origin != state.tracking_origin) {
+      state.droideka_reference_origin = state.tracking_origin;
+      state.droideka_reference = state.tracking_origin;
+   }
+
+   state.body_anchored = false;
+   state.tracking_reference = state.droideka_reference;
+   state.tracking_scale = 1.0f;
+   state.droideka_inside = false;
+
+   const std::optional<glm::vec3> origin =
+      s.droideka_first_person ? melee::player_droideka_position() : std::nullopt;
+   const bool usable =
+      origin && glm::distance(*origin, camera.position) < droideka_max_camera_distance;
+
+   if (s.droideka_first_person && !state.droideka_logged) {
+      state.droideka_logged = true;
+
+      if (usable) {
+         log_fmt(Log_level::info,
+                 "VR: droideka first person: its origin is {:.2f} m from the game camera, "
+                 "{:.2f} m under it.",
+                 glm::distance(*origin, camera.position), camera.position.y - origin->y);
+      }
+      else {
+         log_fmt(Log_level::info,
+                 "VR: droideka first person: its position {} - seen from the game camera "
+                 "instead.",
+                 origin ? "is too far from the game camera" : "can't be read");
+      }
+   }
+
+   if (!usable) {
+      state.droideka_eye_y_valid = false;
+      state.anchor_offset.y = steadied(camera.position.y, dt) - camera.position.y;
+
+      return;
+   }
+
+   state.sway_valid = false;
+   state.droideka_inside = true;
+   state.droideka_position = *origin;
+
+   const float eye_y = origin->y + s.droideka_eye_height;
+
+   if (!state.droideka_eye_y_valid || std::abs(eye_y - state.droideka_eye_y) > 2.0f ||
+       dt <= 0.0f) {
+      state.droideka_eye_y = eye_y;
+      state.droideka_eye_y_valid = true;
+   }
+   else {
+      state.droideka_eye_y += (eye_y - state.droideka_eye_y) *
+                              (1.0f - std::exp(-dt / droideka_eye_smoothing_seconds));
+   }
+
+   const glm::vec3 heading =
+      state.vehicle_heading_valid ? state.vehicle_heading : horizontal(camera.forward);
+   const glm::vec3 eyes = glm::vec3{origin->x, state.droideka_eye_y, origin->z} +
+                          heading * s.droideka_eye_forward;
+
+   state.anchor_offset = eyes - camera.position;
+
+   // Never under its origin (a head lowered a lot).
+   const float lowest = origin->y + 0.2f;
+   const glm::vec3 eyes_world = head_position_world(camera);
+
+   if (eyes_world.y < lowest) state.anchor_offset.y += lowest - eyes_world.y;
+}
 
 // Where the eyes and hands sit in this frame, as an offset from the game camera's
 // position, from the frame's world camera (once per frame):
@@ -2333,6 +2510,15 @@ void update_anchor(const Game_camera& camera) noexcept
    state.turret_body.reset();
    state.turret_own_taken = false;
 
+   state.droideka_inside = false;
+
+   if (state.droideka_rolled) {
+      state.sway_on_feet = false;
+      anchor_droideka(camera, dt);
+
+      return;
+   }
+
    const std::optional<melee::Player_soldier> soldier =
       settings().body_scale != Body_scale::off ? melee::player_soldier() : std::nullopt;
    const bool body = soldier && glm::distance(soldier->position, camera.position) <
@@ -2355,6 +2541,8 @@ void update_anchor(const Game_camera& camera) noexcept
    anchor_body(camera, *soldier, steadied(soldier->position.y, dt), dt);
 }
 
+void snap_turn(const float degrees) noexcept;
+
 // Turn the game camera towards the right hand's aim (controller aim) or the head with
 // injected mouse movement. The game fires and culls along its camera; the eyes only
 // take the camera's position, so turning it doesn't move what the player sees.
@@ -2372,6 +2560,33 @@ void update_mouse_follow() noexcept
       state.mouse_remainder = {};
 
       return;
+   }
+
+   // Steered on the virtual screen, the game camera turned while the head's mapping onto
+   // the world stayed: following the hand would turn it back to where it looked before
+   // (a droideka unrolling faced its pre-roll heading). The head now looks the camera's way.
+   if (state.heading_after_vehicle && !state.menu_frame) {
+      state.heading_after_vehicle = false;
+
+      const glm::vec3 head_heading = horizontal(tracking_to_world(
+         rotate(state.views[0].pose.orientation, glm::vec3{0.0f, 0.0f, -1.0f})));
+      const glm::vec3 head_right = horizontal(tracking_to_world(
+         rotate(state.views[0].pose.orientation, glm::vec3{1.0f, 0.0f, 0.0f})));
+      const glm::vec3 camera_heading = horizontal(state.main_camera.forward);
+
+      if (head_heading != glm::vec3{} && head_right != glm::vec3{} &&
+          camera_heading != glm::vec3{}) {
+         const float angle = std::atan2(glm::dot(camera_heading, head_right),
+                                        glm::dot(camera_heading, head_heading));
+
+         snap_turn(angle * 180.0f / std::numbers::pi_v<float>);
+         state.mouse_remainder = {};
+
+         log_fmt(Log_level::info,
+                 "VR: off the virtual screen after a vehicle: the head turned {:.0f} deg onto "
+                 "the game camera's heading.",
+                 angle * 180.0f / std::numbers::pi_v<float>);
+      }
    }
 
    // With a melee weapon the hand using the ability aims (force powers), along its
@@ -2992,7 +3207,7 @@ void __stdcall pvs_camera_hook(std::uint8_t* const camera) noexcept
    state.stat_pvs_updates += 1;
    state.stat_pvs_on =
       *reinterpret_cast<const std::uint8_t*>(
-         exe_pvs_enabled - exe_image_base +
+         (gog2006::active() ? 0x007fe628 : exe_pvs_enabled) - exe_image_base +
          reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr))) != 0;
 
    const std::optional<Camera_rows> rows =
@@ -3333,6 +3548,59 @@ __declspec(naked) void prop_pool_load_stub()
    }
 }
 
+// Same pool bug in the 2006 build (captured at 0x62523d with index 66,
+// capacity 66). Registers differ, and one x87 value is live at the load.
+__declspec(naked) void gog_prop_pool_load_stub()
+{
+   __asm {
+      push edx
+      mov edx, prop_pool_count
+      cmp eax, dword ptr [edx]
+      pop edx
+      jge pool_used_up
+      mov ebx, dword ptr [ecx+eax*4]
+      fild dword ptr [esp+20h]
+      jmp dword ptr [prop_pool_resume]
+   pool_used_up:
+      // 0x625207 loaded grid_width / 2; the normal path pops it at 0x62526e.
+      // Balance x87 before entering the function's shared return epilogue.
+      fstp st(0)
+      inc dword ptr [prop_pool_overruns]
+      jmp dword ptr [prop_pool_full_return]
+   }
+}
+
+void patch_gog2006_prop_pool() noexcept
+{
+   if (prop_pool_resume) return;
+   constexpr std::uint8_t expected[] = {0x8b, 0x1c, 0x81, 0xdb, 0x44, 0x24, 0x20};
+   constexpr std::uint8_t epilogue[] = {
+      0x5f, 0x5e, 0x5d, 0x5b, 0x81, 0xc4, 0xb0, 0x02, 0x00, 0x00, 0xc3};
+   auto* const site = reinterpret_cast<std::uint8_t*>(gog2006::address(0x625231));
+   if (std::memcmp(site, expected, sizeof(expected)) != 0 ||
+       std::memcmp(reinterpret_cast<const void*>(gog2006::address(0x625406)),
+                   epilogue, sizeof(epilogue)) != 0) {
+      log(Log_level::warning, "VR: GOG prop-pool signatures differ; guard not installed.");
+      return;
+   }
+   DWORD protection = 0;
+   if (!VirtualProtect(site, sizeof(expected), PAGE_EXECUTE_READWRITE, &protection)) return;
+   prop_pool_count = gog2006::address(0x900048);
+   prop_pool_resume = reinterpret_cast<std::uintptr_t>(site) + sizeof(expected);
+   prop_pool_full_return = gog2006::address(0x625406);
+   std::uint8_t jump[sizeof(expected)];
+   std::memset(jump, 0x90, sizeof(jump));
+   jump[0] = 0xe9;
+   const auto rel = static_cast<std::int32_t>(
+      reinterpret_cast<std::uintptr_t>(&gog_prop_pool_load_stub) -
+      (reinterpret_cast<std::uintptr_t>(site) + 5));
+   std::memcpy(jump + 1, &rel, sizeof(rel));
+   std::memcpy(site, jump, sizeof(jump));
+   VirtualProtect(site, sizeof(jump), protection, &protection);
+   FlushInstructionCache(GetCurrentProcess(), site, sizeof(jump));
+   log(Log_level::info, "VR: GOG 2006 prop cluster pool overrun guarded (x87 balanced).");
+}
+
 void patch_prop_pool() noexcept
 {
    if (prop_pool_resume) return;
@@ -3535,13 +3803,44 @@ constexpr std::uint32_t draw_queue_growth = 4;
 
 using Queue_init_fn = void(__fastcall*)(void* queue, void*, std::uint32_t capacity);
 
+// The 2006 build: ESI = queue, EAX = capacity (whole-program optimised, plain ret).
+constexpr Draw_queue gog_draw_queues[] = {{0x01e50a2c, 800}, {0x01e50a14, 512},
+                                          {0x01ea4230, 100}};
+constexpr std::uintptr_t gog_queue_init = 0x006a2d40;
+std::uintptr_t gog_queue_init_original = 0;
+
+__declspec(naked) void __fastcall gog_queue_init_adapter(void*, void*, std::uint32_t)
+{
+   __asm {
+      push esi
+      push edi
+      push ebx
+      push ebp
+      mov esi, ecx
+      mov eax, dword ptr [esp + 20]
+      call dword ptr [gog_queue_init_original]
+      pop ebp
+      pop ebx
+      pop edi
+      pop esi
+      ret 4
+   }
+}
+
 // Returns whether every queue was empty (nothing refers to the draw array then).
 bool enlarge_draw_queues(const std::uintptr_t base) noexcept
 {
-   const auto init = reinterpret_cast<Queue_init_fn>(exe_queue_init - exe_image_base + base);
+   const bool gog = gog2006::active();
+   const auto init = gog ? reinterpret_cast<Queue_init_fn>(&gog_queue_init_adapter)
+                         : reinterpret_cast<Queue_init_fn>(exe_queue_init - exe_image_base + base);
+   const std::span<const Draw_queue> queues =
+      gog ? std::span<const Draw_queue>(gog_draw_queues)
+          : std::span<const Draw_queue>(exe_draw_queues);
    bool all_empty = true;
 
-   for (const Draw_queue& queue : exe_draw_queues) {
+   if (gog) gog_queue_init_original = gog_queue_init - exe_image_base + base;
+
+   for (const Draw_queue& queue : queues) {
       auto* const q = reinterpret_cast<std::uint8_t*>(queue.address - exe_image_base + base);
       const auto capacity = *reinterpret_cast<const std::uint32_t*>(q + 0x14);
       const auto head = *reinterpret_cast<const std::uint32_t*>(q + 0xc);
@@ -3602,10 +3901,19 @@ void enlarge_draw_array(const std::uintptr_t base, const bool queues_empty) noex
       return *reinterpret_cast<const std::uint32_t*>(address);
    };
 
-   bool expected = read(rebase(exe_draw_array_limit)) == exe_draw_array_capacity;
+   const bool gog = gog2006::active();
+   const std::uintptr_t array_address = gog ? 0x01e50a90 : exe_draw_array;
+   const std::uintptr_t limit_site = gog ? 0x0069dd73 : exe_draw_array_limit;
+   const std::uintptr_t count_address = gog ? 0x01d71dc4 : exe_draw_count;
+   constexpr std::uintptr_t gog_array_refs[] = {0x0069dd93, 0x0069e3b0, 0x0069f787};
+   const std::span<const std::uintptr_t> array_refs =
+      gog ? std::span<const std::uintptr_t>(gog_array_refs)
+          : std::span<const std::uintptr_t>(exe_draw_array_refs);
 
-   for (const std::uintptr_t ref : exe_draw_array_refs) {
-      expected &= read(rebase(ref)) == rebase(exe_draw_array);
+   bool expected = read(rebase(limit_site)) == exe_draw_array_capacity;
+
+   for (const std::uintptr_t ref : array_refs) {
+      expected &= read(rebase(ref)) == rebase(array_address);
    }
 
    if (!expected) {
@@ -3615,7 +3923,7 @@ void enlarge_draw_array(const std::uintptr_t base, const bool queues_empty) noex
       return;
    }
 
-   draw_count = reinterpret_cast<const std::uint32_t*>(rebase(exe_draw_count));
+   draw_count = reinterpret_cast<const std::uint32_t*>(rebase(count_address));
 
    // Draws live only within a frame (the queues are empty here), and their constructor
    // does nothing: zeroed memory is a fresh array.
@@ -3629,13 +3937,13 @@ void enlarge_draw_array(const std::uintptr_t base, const bool queues_empty) noex
    if (array) {
       draw_array_capacity = exe_draw_array_capacity * draw_array_growth;
 
-      for (const std::uintptr_t ref : exe_draw_array_refs) {
+      for (const std::uintptr_t ref : array_refs) {
          write_code_dword(rebase(ref),
                           static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(array)));
       }
    }
 
-   write_code_dword(rebase(exe_draw_array_limit), draw_array_capacity - draw_array_headroom);
+   write_code_dword(rebase(limit_site), draw_array_capacity - draw_array_headroom);
 
    FlushInstructionCache(GetCurrentProcess(), nullptr, 0);
 
@@ -3644,9 +3952,87 @@ void enlarge_draw_array(const std::uintptr_t base, const bool queues_empty) noex
            array ? "" : " (not moved: the queues weren't empty), overrun guarded");
 }
 
+// The 2006 build: push(ESI = queue, EAX = key, [esp+4] = &draw, ret 4); release(ESI = draw).
+std::uintptr_t gog_queue_push_original = 0;
+std::uintptr_t gog_release_original = 0;
+
+__declspec(naked) void __fastcall gog_release_adapter(void*)
+{
+   __asm {
+      push esi
+      push edi
+      push ebx
+      push ebp
+      mov esi, ecx
+      call dword ptr [gog_release_original]
+      pop ebp
+      pop ebx
+      pop edi
+      pop esi
+      ret
+   }
+}
+
+void __fastcall gog_dropped_draw(void* const* const draw) noexcept
+{
+   dropped_queued_draws += 1;
+
+   if (*draw) {
+      reinterpret_cast<Release_draw_fn>(&gog_release_adapter)(*draw);
+   }
+}
+
+__declspec(naked) void gog_queue_push_entry()
+{
+   __asm {
+      cmp dword ptr [esi + 8], 0
+      je dropped
+      jmp dword ptr [gog_queue_push_original]
+   dropped:
+      push eax
+      push ecx
+      push edx
+      mov ecx, dword ptr [esp + 16]
+      call gog_dropped_draw
+      pop edx
+      pop ecx
+      pop eax
+      ret 4
+   }
+}
+
+void patch_gog2006_queue_push() noexcept
+{
+   constexpr std::uintptr_t sites[] = {0x0069e4cf, 0x0069e5a5, 0x0069e620, 0x006a3f34,
+                                       0x006a3fc9};
+   const auto base = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
+
+   gog_release_original = 0x0069b3a0 - exe_image_base + base;
+   gog_queue_push_original = patch_calls(0x006a2c70, sites,
+                                         reinterpret_cast<const void*>(&gog_queue_push_entry));
+
+   if (!gog_queue_push_original) {
+      log(Log_level::warning, "VR: GOG 2006 draw queue push isn't as expected, full queues "
+                              "may leak shader references.");
+
+      return;
+   }
+
+   queue_push = reinterpret_cast<Queue_push_fn>(gog_queue_push_original);
+   log(Log_level::info, "VR: GOG 2006 full draw queues give dropped draws' references back.");
+
+   enlarge_draw_array(base, enlarge_draw_queues(base));
+}
+
 void patch_queue_push() noexcept
 {
    if (queue_push) return;
+
+   if (gog2006::active()) {
+      patch_gog2006_queue_push();
+
+      return;
+   }
 
    const auto base = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
 
@@ -3667,6 +4053,142 @@ void patch_queue_push() noexcept
    enlarge_draw_array(base, enlarge_draw_queues(base));
 }
 
+// The 2006 LTCG build passes RedCamera in EAX; the 2017 build uses ECX.
+// Keep the original function callable through the interface used by this module.
+std::uintptr_t gog_frustum_original = 0;
+std::uintptr_t gog_view_original = 0;
+std::uintptr_t gog_render_original = 0;
+std::uintptr_t gog_pvs_original = 0;
+void* gog_pvs_manager = nullptr;
+int gog_pvs_flags = 0;
+
+void __stdcall gog_pvs_adapter(std::uint8_t* camera) noexcept
+{
+   const auto original = reinterpret_cast<void(__thiscall*)(void*, void*, int)>(gog_pvs_original);
+   original(gog_pvs_manager, camera ? camera + 0x24 : nullptr, gog_pvs_flags);
+}
+
+void __fastcall gog_pvs_entry(void* manager, void*, std::uint8_t* base_camera, int flags) noexcept
+{
+   // Keep the existing sector-visibility implementation, including all arguments.
+   void* const saved_manager = gog_pvs_manager;
+   const int saved_flags = gog_pvs_flags;
+   gog_pvs_manager = manager;
+   gog_pvs_flags = flags;
+   pvs_camera_hook(base_camera ? base_camera - 0x24 : nullptr);
+   gog_pvs_manager = saved_manager;
+   gog_pvs_flags = saved_flags;
+}
+
+__declspec(naked) void __fastcall gog_frustum_adapter(std::uint8_t*) noexcept
+{
+   __asm {
+      mov eax, ecx
+      jmp dword ptr [gog_frustum_original]
+   }
+}
+
+__declspec(naked) void gog_frustum_entry() noexcept
+{
+   __asm {
+      pushfd
+      pushad
+      mov ebp, esp
+      sub esp, 528
+      and esp, -16
+      fxsave [esp]
+      mov ecx, [ebp + 28]
+      call update_frustum_hook
+      fxrstor [esp]
+      mov esp, ebp
+      popad
+      popfd
+      ret
+   }
+}
+
+void __fastcall gog_view_adapter(std::uint8_t* camera) noexcept
+{
+   reinterpret_cast<void(__stdcall*)(std::uint8_t*)>(gog_view_original)(camera);
+}
+
+void __stdcall gog_view_entry(std::uint8_t* camera) noexcept
+{
+   build_view_hook(camera);
+}
+
+// The old renderer inlines the render-camera assignment. This checked call occurs
+// immediately after it, before sector visibility and the first BeginScene.
+void gog_begin_head_cull() noexcept
+{
+   apply_head_cull();
+   if (state.head_cull_done) state.stat_head_cull_started_early += 1;
+}
+
+__declspec(naked) void gog_render_entry() noexcept
+{
+   __asm {
+      pushfd
+      pushad
+      mov ebp, esp
+      sub esp, 528
+      and esp, -16
+      fxsave [esp]
+      call gog_begin_head_cull
+      fxrstor [esp]
+      mov esp, ebp
+      popad
+      popfd
+      jmp dword ptr [gog_render_original]
+   }
+}
+
+void hook_gog2006_camera() noexcept
+{
+   // Calls verified in the exact 2006 EXE. Setters are often inlined in this build.
+   constexpr std::uintptr_t frustum_calls[] = {
+      0x451db2, 0x4523e7, 0x45242f, 0x4524a1, 0x4533e0, 0x4539ac,
+      0x4539e5, 0x461dd8, 0x59b18b, 0x5c7dcd, 0x662397, 0x662449,
+      0x6a5331, 0x6a91f7, 0x6a9581, 0x6a963e, 0x6a9b92, 0x6a9e17,
+      0x6aa43e, 0x6aa5d2, 0x6ab23e, 0x6abbb0, 0x6c2355, 0x6c37a4,
+      0x6c3804, 0x6c6c0b, 0x6c6c4c, 0x6eb6c1, 0x6ec596, 0x6ecba1};
+   constexpr std::uintptr_t view_calls[] = {
+      0x451d82, 0x461dc7, 0x59b16c, 0x6a52c0, 0x6ab639,
+      0x6abb4d, 0x6abc4c, 0x6c2578, 0x6c3756};
+   constexpr std::uintptr_t render_calls[] = {0x6a9240};
+
+   gog_frustum_original = patch_calls(0x6c2500, frustum_calls,
+                                       reinterpret_cast<const void*>(&gog_frustum_entry));
+   if (!gog_frustum_original) {
+      log(Log_level::warning, "VR: GOG 2006 camera signatures failed; no camera hooks installed.");
+      return;
+   }
+   state.update_frustum = reinterpret_cast<std::uintptr_t>(&gog_frustum_adapter);
+   if (!state.head_camera_disabled) {
+      gog_view_original = patch_calls(0x6c2750, view_calls,
+                                       reinterpret_cast<const void*>(&gog_view_entry));
+      if (gog_view_original) state.build_view = reinterpret_cast<std::uintptr_t>(&gog_view_adapter);
+   }
+   if (!state.head_cull_disabled) {
+      gog_render_original = patch_calls(0x6a19e0, render_calls,
+                                         reinterpret_cast<const void*>(&gog_render_entry));
+      auto* const pvs_slot = reinterpret_cast<std::uintptr_t*>(gog2006::address(0x7da4b0));
+      if (*pvs_slot == gog2006::address(0x6bff60)) {
+         DWORD protection = 0;
+         if (VirtualProtect(pvs_slot, sizeof(*pvs_slot), PAGE_READWRITE, &protection)) {
+            gog_pvs_original = *pvs_slot;
+            state.pvs_camera = reinterpret_cast<std::uintptr_t>(&gog_pvs_adapter);
+            *pvs_slot = reinterpret_cast<std::uintptr_t>(&gog_pvs_entry);
+            VirtualProtect(pvs_slot, sizeof(*pvs_slot), protection, &protection);
+         }
+      }
+   }
+   log_fmt(Log_level::info,
+           "VR: GOG 2006 camera: 30 frustum calls adapted; early head culling {}; view {}; PVS {}.",
+           gog_render_original ? "enabled" : "disabled",
+           state.build_view ? "adapted" : "default", gog_pvs_original ? "adapted" : "default");
+}
+
 void hook_game_camera() noexcept
 {
    if (state.update_frustum) return;
@@ -3684,6 +4206,13 @@ void hook_game_camera() noexcept
    state.head_cull_disabled =
       GetFileAttributesW((module_directory() + L"bf2vr_no_head_cull.txt").c_str()) !=
       INVALID_FILE_ATTRIBUTES;
+
+   if (gog2006::active()) {
+      hook_gog2006_camera();
+      patch_gog2006_prop_pool();
+      patch_queue_push();
+      return;
+   }
 
    state.update_frustum = patch_calls(exe_update_frustum, exe_update_frustum_calls,
                                       reinterpret_cast<const void*>(&update_frustum_hook));
@@ -3839,6 +4368,25 @@ void log_system_info(const std::wstring& directory) noexcept
                                  : "unknown build",
            large_address_aware ? "Large Address Aware" : "NOT Large Address Aware",
            (memory.ullTotalPhys + (1ull << 29)) >> 30, memory.ullTotalVirtual >> 20);
+
+   // A fingerprint of the exe (FNV-1a over the file), to tell builds of the same size
+   // apart in a bug report.
+   if (const HANDLE file = CreateFileW(exe_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                                       OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+       file != INVALID_HANDLE_VALUE) {
+      std::uint32_t hash = 2166136261u;
+      std::vector<std::uint8_t> chunk(1 << 16);
+      DWORD read = 0;
+
+      while (ReadFile(file, chunk.data(), static_cast<DWORD>(chunk.size()), &read, nullptr) &&
+             read != 0) {
+         for (DWORD i = 0; i < read; ++i) hash = (hash ^ chunk[i]) * 16777619u;
+      }
+
+      CloseHandle(file);
+
+      log_fmt(Log_level::info, "VR: game program fingerprint {:08x}.", hash);
+   }
 
    std::string addons;
    WIN32_FIND_DATAW found{};
@@ -4804,6 +5352,47 @@ void snap_turn(const float degrees) noexcept
    state.world_right = std::cos(angle) * right - std::sin(angle) * forward;
 }
 
+// A vehicle's turn (its camera's heading) that's this fast shows the whole comfort
+// vignette; one this large in a frame is a camera cut, not a turn.
+constexpr float vehicle_turn_full_vignette = 90.0f * std::numbers::pi_v<float> / 180.0f; // per s
+constexpr float vehicle_turn_max_per_frame = 45.0f * std::numbers::pi_v<float> / 180.0f;
+
+// A vehicle seen in the headset (a rolled droideka) turns the player with it: the
+// tracking -> world mapping follows the game camera's heading like smooth turning (with
+// the comfort vignette), so the head looking around never turns the vehicle and the
+// vehicle turning never leaves the head looking the old way.
+void follow_vehicle_heading(const float dt) noexcept
+{
+   const glm::vec3 heading = horizontal(state.main_camera.forward);
+   const glm::vec3 right = horizontal(state.main_camera.right);
+
+   if (!state.main_camera_valid || heading == glm::vec3{} || right == glm::vec3{}) {
+      state.vehicle_heading_valid = false;
+
+      return;
+   }
+
+   if (state.vehicle_heading_valid) {
+      const float angle = std::atan2(glm::dot(heading, state.vehicle_heading_right),
+                                     glm::dot(heading, state.vehicle_heading));
+
+      if (std::abs(angle) < vehicle_turn_max_per_frame && std::abs(angle) > 1e-5f) {
+         snap_turn(glm::degrees(angle));
+         state.vehicle_turned_degrees += glm::degrees(angle);
+
+         if (dt > 0.0f) {
+            state.move_amount =
+               std::max(state.move_amount,
+                        std::min(std::abs(angle) / dt / vehicle_turn_full_vignette, 1.0f));
+         }
+      }
+   }
+
+   state.vehicle_heading = heading;
+   state.vehicle_heading_right = right;
+   state.vehicle_heading_valid = true;
+}
+
 // Rank (by size, last frame) of the model part with this origin, or -1.
 auto ranked_part_index(const glm::vec3 origin_view) noexcept -> int
 {
@@ -5631,16 +6220,40 @@ void update_shake_cooling(const float dt, const bool active) noexcept
    }
 
    const float extra = settings().shake_cooling - 1.0f;
+   const bool shaking = extra > 0.0f && state.shake_level > 0.0f;
 
-   if (extra <= 0.0f || state.shake_level <= 0.0f) return;
-
-   if (melee::cool_player_weapon(dt * extra * state.shake_level)) {
+   if (shaking && melee::cool_player_weapon(dt * extra * state.shake_level)) {
       if (stroke) haptic_pulse(1, 0.2f, 0.02f);
 
       if (!std::exchange(state.shake_cooling_logged, true)) {
          log_fmt(Log_level::info, "VR: an overheated gun cooled by shaking ({:.1f}x).",
                  settings().shake_cooling);
       }
+   }
+
+   // While it cools: a light buzz in the gun hand, stronger with the shake.
+   state.cooling_buzz_due = std::max(state.cooling_buzz_due - dt, 0.0f);
+
+   if (!settings().cooling_haptics) return;
+
+   const std::optional<melee::Weapon_heat> heat = melee::player_weapon_heat();
+
+   if (!heat || heat->heat < cooling_buzz_min_heat ||
+       (!heat->overheated && melee::player_shot_within(cooling_buzz_after_shot))) {
+      return;
+   }
+
+   if (state.cooling_buzz_due > 0.0f) return;
+
+   const float amplitude = cooling_buzz_base + cooling_buzz_heat * heat->heat +
+                           (shaking ? cooling_buzz_shake * state.shake_level : 0.0f);
+
+   haptic_pulse(1, amplitude, cooling_buzz_interval);
+   state.cooling_buzz_due = cooling_buzz_interval;
+
+   if (!std::exchange(state.cooling_buzz_logged, true)) {
+      log_fmt(Log_level::info, "VR: the gun vibrates while it cools (heat {:.2f}{}).",
+              heat->heat, heat->overheated ? ", overheated" : "");
    }
 }
 
@@ -6078,9 +6691,13 @@ void update_input() noexcept
 
    if (state.aim_valid) state.stat_aim_valid += 1;
 
+   const bool was_vehicle_controls = state.vehicle_controls;
+
    state.vehicle_controls =
-      state.menu_frame && state.recentered && melee::player_in_vehicle() &&
-      !melee::game_screen_shown();
+      (state.menu_frame || state.droideka_rolled) && state.recentered &&
+      melee::player_in_vehicle() && !melee::game_screen_shown();
+
+   if (was_vehicle_controls && !state.vehicle_controls) state.heading_after_vehicle = true;
 
    // Without a soldier (dead, the unit select, a new map from the pause menu) the next
    // one is measured anew: update_anchor only sees gameplay frames, and a quit to a new
@@ -6320,6 +6937,10 @@ void update_input() noexcept
    glm::vec2 right_stick = gameplay ? stick(state.turn_action) : glm::vec2{};
 
    if (!vehicle) state.vehicle_stick_sent = {};
+
+   // Seen in the headset (not on the screen), the vehicle turns the player with it.
+   if (vehicle && !state.menu_frame) follow_vehicle_heading(dt);
+   else state.vehicle_heading_valid = false;
 
    if (vehicle) {
       // Steering (up = nose up): the game's mouse steering keeps turning while the mouse
@@ -7012,7 +7633,11 @@ void end_frame(ID3D11DeviceContext& dc, ID3D11Texture2D& frame, const bool side_
    end_info.layerCount = layer_count;
    end_info.layers = layers.data();
 
-   failed(state.xr.xrEndFrame(state.session, &end_info), "xrEndFrame");
+   {
+      const perf::Cpu_scope perf_scope{perf::Cpu_part::submit};
+
+      failed(state.xr.xrEndFrame(state.session, &end_info), "xrEndFrame");
+   }
 
    state.frame_begun = false;
 }
@@ -7026,13 +7651,21 @@ void update_overscan() noexcept
    const XrQuaternionf q = state.views[0].pose.orientation;
    const float period = std::max(static_cast<float>(state.frame_state.predictedDisplayPeriod) * 1e-9f,
                                  0.001f);
+   // The head's turn since the last frame's display time: a game slower than the
+   // headset skips display periods, and per period the speed jumped up and down.
+   const XrTime time = state.frame_state.predictedDisplayTime;
+   const float elapsed = state.overscan_time && time > state.overscan_time
+                            ? static_cast<float>(time - state.overscan_time) * 1e-9f
+                            : period;
    float speed = 0.0f; // degrees per second
 
-   if (state.overscan_orientation_valid) {
+   state.overscan_time = time;
+
+   if (state.overscan_orientation_valid && elapsed < 0.1f) {
       const XrQuaternionf& r = state.overscan_orientation;
       const float dot = std::abs(q.x * r.x + q.y * r.y + q.z * r.z + q.w * r.w);
 
-      speed = 2.0f * std::acos(std::min(dot, 1.0f)) * 180.0f / std::numbers::pi_v<float> / period;
+      speed = 2.0f * std::acos(std::min(dot, 1.0f)) * 180.0f / std::numbers::pi_v<float> / elapsed;
    }
 
    state.overscan_orientation = q;
@@ -7062,10 +7695,15 @@ void begin_frame() noexcept
 {
    state.frame_state = {XR_TYPE_FRAME_STATE};
 
-   if (failed(state.xr.xrWaitFrame(state.session, nullptr, &state.frame_state), "xrWaitFrame"))
-      return;
+   {
+      const perf::Cpu_scope perf_scope{perf::Cpu_part::wait};
 
-   if (failed(state.xr.xrBeginFrame(state.session, nullptr), "xrBeginFrame")) return;
+      if (failed(state.xr.xrWaitFrame(state.session, nullptr, &state.frame_state),
+                 "xrWaitFrame"))
+         return;
+
+      if (failed(state.xr.xrBeginFrame(state.session, nullptr), "xrBeginFrame")) return;
+   }
 
    state.frame_begun = true;
    state.views_valid = false;
@@ -7267,7 +7905,7 @@ void update_melee() noexcept
       state.had_melee = false;
    }
 
-   if (events.swing_speed > 0.0f) sound::play_swing(events.swing_speed);
+   if (events.swing_speed > 0.0f) sound::play_swing(events.swing_speed, events.swing_position);
    // Only a bash that hit something is heard (a swish for every miss was a nuisance).
    if (events.bash_hits + events.bash_blocked > 0) sound::play_bash(true);
 
@@ -7458,6 +8096,66 @@ void write_crash_dump(EXCEPTION_POINTERS* const info) noexcept
 
 LPTOP_LEVEL_EXCEPTION_FILTER previous_crash_filter = nullptr;
 
+// This EXE handles access violations / FP divide-by-zero in WinMain and calls
+// _exit(0), bypassing the unhandled-exception filter. Capture that original
+// exception before runtime DLL teardown can replace it with a secondary crash.
+std::uintptr_t gog_exception_exit_original = 0;
+
+void __stdcall record_gog_caught_exception(EXCEPTION_POINTERS* info) noexcept
+{
+   if (!info || !info->ExceptionRecord || !info->ContextRecord) return;
+
+   // SEH has unwound the original stack. Own copies before logging / dump-writing
+   // uses that stack again and overwrites the exception dispatcher's old records.
+   EXCEPTION_RECORD record = *info->ExceptionRecord;
+   CONTEXT context = *info->ContextRecord;
+   record.ExceptionRecord = nullptr;
+   EXCEPTION_POINTERS saved{&record, &context};
+   log_fmt(Log_level::error,
+           "VR: GOG 2006 WinMain caught exception 0x{:08X} at 0x{:08X}; "
+           "operation {}, address 0x{:08X}; EAX {:08X} ECX {:08X} EDX {:08X} "
+           "EBX {:08X} ESI {:08X} EDI {:08X} EBP {:08X} ESP {:08X}. "
+           "Saving the original exception before the game's _exit(0).",
+           record.ExceptionCode, context.Eip,
+           record.NumberParameters >= 1 ? record.ExceptionInformation[0] : 0,
+           record.NumberParameters >= 2 ? record.ExceptionInformation[1] : 0,
+           context.Eax, context.Ecx, context.Edx, context.Ebx,
+           context.Esi, context.Edi, context.Ebp, context.Esp);
+   write_crash_dump(&saved);
+}
+
+__declspec(naked) void gog_exception_exit_entry() noexcept
+{
+   __asm {
+      // The verified __except block still has WinMain's frame in EBP.
+      mov eax, [ebp - 14h]
+      push eax
+      call record_gog_caught_exception
+      // Original return address and _exit's argument remain on the stack.
+      jmp dword ptr [gog_exception_exit_original]
+   }
+}
+
+void install_gog_caught_exception_diagnostics() noexcept
+{
+   if (!gog2006::active() || gog_exception_exit_original) return;
+   const std::uint8_t filter[] = {0x8b, 0x55, 0xec, 0x8b, 0x02, 0x8b, 0x00};
+   const std::uint8_t handler[] = {0x8b, 0x65, 0xe8, 0x6a, 0x00};
+   if (std::memcmp(reinterpret_cast<const void*>(gog2006::address(0x622491)),
+                   filter, sizeof(filter)) != 0 ||
+       std::memcmp(reinterpret_cast<const void*>(gog2006::address(0x6224b6)),
+                   handler, sizeof(handler)) != 0) {
+      log(Log_level::warning, "VR: GOG exception-handler signature differs; diagnostics skipped.");
+      return;
+   }
+   constexpr std::uintptr_t calls[] = {0x6224bb};
+   gog_exception_exit_original =
+      patch_calls(0x74f5e0, calls, reinterpret_cast<const void*>(&gog_exception_exit_entry));
+   if (gog_exception_exit_original) {
+      log(Log_level::info, "VR: GOG 2006 caught-exception diagnostics enabled.");
+   }
+}
+
 // Crash diagnostics: an exception nobody handled (the game is about to close) is logged
 // with code, module and offset and written to a crash dump next to the run's log; then
 // the filter before ours (Windows Error Reporting by default) runs. Exceptions caught
@@ -7614,6 +8312,7 @@ void init_session(ID3D11Device& device) noexcept
    state.device = &device;
 
    previous_crash_filter = SetUnhandledExceptionFilter(crash_filter);
+   install_gog_caught_exception_diagnostics();
    watch_crt_aborts();
 
    // Debug switch: a bf2vr_mono.txt next to d3d9.dll keeps the side-by-side layout
@@ -8044,6 +8743,7 @@ auto choose_eye_draw(const std::array<glm::vec4, 4>& game_view_projection, const
       state.cached_weapon_pass = false;
       state.cached_hud = false;
       state.cached_far_anchored = false;
+      state.cached_world_camera = false;
       state.current_frame_camera = -1;
 
       if (reject != Reject::none) {
@@ -8266,6 +8966,8 @@ auto choose_eye_draw(const std::array<glm::vec4, 4>& game_view_projection, const
          // The world camera (and anything else drawn with plain eye cameras).
          update_eyes(camera);
          state.cached_valid = true;
+         state.cached_world_camera = true;
+         state.cached_world_camera_position = camera.position;
 
          const Game_camera eye_camera = body_near_plane(camera, state.tracking_scale);
 
@@ -8455,6 +9157,29 @@ auto choose_eye_draw(const std::array<glm::vec4, 4>& game_view_projection, const
    if (eye >= 2 && state.cached_hud) return Eye_draw::skip;
 
    if (at_infinity && eye == 0) state.stat_far_draws += 1;
+   if (at_infinity) state.frame_far_scene = true;
+
+   const bool sky_dome =
+      !at_infinity && !state.last_frame_far_scene && state.cached_world_camera &&
+      !state.cached_hud && !draw.skinned && eye < 2 &&
+      (glm::distance(draw.object_position, state.cached_world_camera_position) <
+          sky_dome_camera_distance ||
+       glm::distance(draw.object_position, state.cached_camera_position) <
+          sky_dome_camera_distance);
+
+   if (sky_dome && !std::exchange(state.sky_without_far_scene_logged, true)) {
+      log_fmt(Log_level::info,
+              "VR: the game draws no far scene: the sky dome ({} elements, shader '{}') "
+              "comes with the world and is drawn from one point for both eyes.",
+              draw.element_count, draw.shader_name);
+   }
+
+   if (sky_dome) {
+      eye_vp = state.cached_eye_vp_at_infinity[eye];
+      eye_positionWS = state.cached_camera_position;
+
+      return Eye_draw::eye_camera;
+   }
 
    if (at_infinity && eye < 2 && state.cached_far_anchored && !state.cached_hud &&
        glm::distance(draw.object_position, state.cached_camera_position) >
@@ -8561,6 +9286,15 @@ auto eye_view_projection(const std::array<glm::vec4, 4>& game_view_projection,
       note_skinned_draw(draw);
    }
 
+   // Inside the rolled droideka its own model (around its origin) isn't drawn.
+   if (state.droideka_inside && !state.menu_frame &&
+       glm::distance(draw.object_position, state.droideka_position) <
+          settings().droideka_hide_radius) {
+      if (eye == 0) state.stat_droideka_hidden_draws += 1;
+
+      return Eye_draw::skip;
+   }
+
    // On a turret the player's own soldier (skinned, at its entity, not one of the
    // turret's own draws) isn't drawn.
    if (state.turret_anchor && state.turret_body && draw.skinned) {
@@ -8648,6 +9382,12 @@ void submit_frame(ID3D11DeviceContext& dc, ID3D11Texture2D& frame,
                   const bool side_by_side) noexcept
 {
    if (!state.session) return;
+
+   // All of it, its waits and xrEndFrame included (vr_perf takes those out).
+   const perf::Cpu_scope perf_scope{perf::Cpu_part::vr};
+
+   perf::note_vr_frame(side_by_side && state.camera_seen_this_frame && !state.menu_frame,
+                       state.perf_refresh_hz, view_count());
 
    if (state.device && !state.device_removal_logged) {
       if (const HRESULT reason = state.device->GetDeviceRemovedReason(); FAILED(reason)) {
@@ -8796,8 +9536,27 @@ void submit_frame(ID3D11DeviceContext& dc, ID3D11Texture2D& frame,
    // Without the weapon pass it's still the unit select fly-over (no entity yet), death,
    // knockdowns and vehicles: those aren't a soldier on foot.
    const bool on_foot = melee::player_soldier_on_foot();
-   const bool no_weapon =
-      !on_foot && state.frames_without_weapon >= menu_after_frames_without_weapon;
+
+   // A droideka rolled up has no gun (no weapon pass): seen in the headset, it stays
+   // gameplay, steered like a vehicle (see update_input).
+   const bool rolled = settings().droideka_rolled_view && melee::player_on_droideka() &&
+                       state.frames_without_weapon >= menu_after_frames_without_weapon;
+
+   if (rolled != state.droideka_rolled) {
+      state.droideka_rolled = rolled;
+
+      if (rolled && state.views_valid) latch_droideka_view();
+
+      log_fmt(Log_level::info,
+              "VR: the droideka {} (turned with it {:.0f} deg while rolled).",
+              rolled ? "rolled up: seen in the headset from the game camera, steered "
+                       "by the right stick"
+                     : "is off the roll",
+              std::exchange(state.vehicle_turned_degrees, 0.0f));
+   }
+
+   const bool no_weapon = !on_foot && !rolled &&
+                          state.frames_without_weapon >= menu_after_frames_without_weapon;
 
    if (on_foot && state.frames_without_weapon == menu_after_frames_without_weapon &&
        state.weapon_gaps_logged < max_logged_weapon_gaps) {
@@ -8837,6 +9596,7 @@ void submit_frame(ID3D11DeviceContext& dc, ID3D11Texture2D& frame,
    }
 
    state.camera_seen_last_frame = std::exchange(state.camera_seen_this_frame, false);
+   state.last_frame_far_scene = std::exchange(state.frame_far_scene, false);
    state.frame_index += 1;
 
    poll_events();
@@ -9354,17 +10114,27 @@ void draw_hud(ID3D11DeviceContext& dc, ID3D11RenderTargetView& rtv,
       }
    };
 
+   // The wrist panels stay on the physical hands through a hand swap (the swap only
+   // moves the weapon): the left controller's pose is aim_pose while swapped.
+   const bool swapped = state.handles_swapped;
+   const bool physical_left_valid = swapped ? state.aim_valid : state.left_aim_valid;
+   const bool physical_right_valid = swapped ? state.left_aim_valid : state.aim_valid;
+   const auto physical_right_hand = [&] {
+      return aim_pose_world(world, swapped ? state.left_aim_pose : state.aim_pose);
+   };
+
    if (s.wrist_hud) {
-      if (state.left_aim_valid) {
-         const World_pose hand = aim_pose_world(world, state.left_aim_pose);
+      if (physical_left_valid) {
+         const World_pose hand =
+            aim_pose_world(world, swapped ? state.aim_pose : state.left_aim_pose);
          const std::size_t first = quads.size();
 
          add_hud_panel(left_up, hand, hud_size, u_scale, quads);
          body_scaled(first, hand.position);
       }
 
-      if (state.aim_valid) {
-         const World_pose hand = aim_pose_world(world);
+      if (physical_right_valid) {
+         const World_pose hand = physical_right_hand();
          const std::size_t first = quads.size();
 
          right_panel_half_height = add_hud_panel(right_up, hand, hud_size, u_scale, quads);
@@ -9468,8 +10238,9 @@ void draw_hud(ID3D11DeviceContext& dc, ID3D11RenderTargetView& rtv,
 
    // The quick reload bar on the right wrist (the gun's): under the wrist HUD's panel
    // (the map), or in its place.
-   if (s.reload_bar_wrist && state.aim_valid) {
-      const Hud_panel_frame frame = hud_panel_frame(right_up, aim_pose_world(world));
+   if (s.reload_bar_wrist && physical_right_valid) {
+      const World_pose hand = physical_right_hand();
+      const Hud_panel_frame frame = hud_panel_frame(right_up, hand);
       const float width = hud_config.panels[right_up].width;
       const float below = right_panel_half_height > 0.0f
                              ? right_panel_half_height + width * 0.1f
@@ -9479,7 +10250,7 @@ void draw_hud(ID3D11DeviceContext& dc, ID3D11RenderTargetView& rtv,
 
       add_reload_bar(frame.center - frame.text_up * below, frame.text_right, frame.text_up,
                      width * 0.9f, quads);
-      body_scaled(first, aim_pose_world(world).position);
+      body_scaled(first, hand.position);
    }
 
    // The rest in front of the eyes (if wanted there), around the crosshair's region.

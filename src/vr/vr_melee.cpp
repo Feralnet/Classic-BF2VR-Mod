@@ -2,9 +2,11 @@
 #include "vr_melee.hpp"
 #include "vr_settings.hpp"
 #include "vr_system.hpp"
+#include "gog2006.hpp"
 #include "../logger.hpp"
 
 #include <algorithm>
+#include <string>
 #include <array>
 #include <bit>
 #include <cmath>
@@ -241,6 +243,14 @@ constexpr std::uint8_t effect_attach_prologue[7] = {0x55, 0x8B, 0xEC,  // push e
                                                     0x53,              // push ebx
                                                     0x8B, 0x5D, 0x08}; // mov ebx, [ebp + 8]
 constexpr std::uintptr_t exe_effect_play = 0x00538010;
+// Sounds (the "effects" above are the same objects: a sound property, 8 bytes = the
+// resolved object + its kind 1 sound, 2 sound set, 3 stream, 4 not loaded yet).
+// FUN_005381c0 thiscall(property; name, unused, lazy) ret 0xc resolves a name (the
+// combo files' Sound("saber_swing"), the ODF's sound names) through the loaded
+// sides' sound lists; exe_effect_play plays it once at a point. Loudness: a sound's
+// +0x10 (0..1, read by FUN_0073aa80 as it starts), a stream's +0x1c.
+constexpr std::uintptr_t exe_sound_resolve = 0x005381c0;
+constexpr std::uint8_t sound_resolve_prologue[6] = {0x55, 0x8B, 0xEC, 0x8B, 0x55, 0x08};
 constexpr std::uint8_t effect_play_prologue[6] = {0x55, 0x8B, 0xEC, 0x83, 0xE4, 0xF8};
 // An emitter ordnance's shot (OrdnanceEmitterClass; see emitter_fire_hook).
 constexpr std::uintptr_t exe_emitter_fire = 0x005fce60;
@@ -479,6 +489,7 @@ struct State {
    Render_fn render = nullptr;
    Leave_state_fn leave_state = nullptr;
    Enter_state_fn enter_state = nullptr;
+   bool gog_melee = false; // the 2006 build's melee methods are hooked
    bool render_hooked = false;
    int render_calls_logged = 0;
 
@@ -581,6 +592,12 @@ struct State {
    // still stands at the gun, and its position (turret_body) tells its draws.
    std::uint8_t* body_owner = nullptr;
    std::uintptr_t body_owner_vtable = 0;
+   // The droideka entity (its weapons' owner), kept while its weapons can be read (on its
+   // legs): rolled up they can't, and the same entity gives its position.
+   const std::uint8_t* droideka_trackable = nullptr;
+   std::uint8_t* droideka_owner = nullptr;
+   std::uintptr_t droideka_owner_vtable = 0;
+   bool droideka_owner_logged = false;
    bool turret_body_valid = false;
    glm::vec3 turret_body{};
 
@@ -766,7 +783,9 @@ std::uintptr_t class_render = 0;
 template<typename T>
 auto engine(const std::uintptr_t image_address) noexcept -> T
 {
-   return (T)(image_address - exe_image_base + state.image_base);
+   const auto mapped = gog2006::melee_address(image_address);
+   if (!mapped) return T{};
+   return (T)(mapped - exe_image_base + state.image_base);
 }
 
 template<typename T>
@@ -794,7 +813,7 @@ auto patch_vtable(const std::uintptr_t vtable, const int slot, const std::uintpt
                   const void* hook) noexcept -> std::uintptr_t
 {
    auto* const entry = engine<std::uintptr_t*>(vtable) + slot;
-   const std::uintptr_t target = expected - exe_image_base + state.image_base;
+   const std::uintptr_t target = engine<std::uintptr_t>(expected);
 
    if (*entry != target) return 0;
 
@@ -860,6 +879,9 @@ auto read_player_melee_weapon() noexcept -> std::uint8_t*
       }
 
       state.soldier_state = field<std::int32_t>(trackable, trackable_soldier_state);
+
+      // The 2006 build's melee weapons are only read once their methods are hooked.
+      if (gog2006::active() && !state.gog_melee) return nullptr;
 
       for (int channel = 0; channel < 2; ++channel) {
          const auto index = field<std::int8_t>(trackable, trackable_weapon_channels + channel);
@@ -995,6 +1017,11 @@ bool read_owner_matrix(std::uint8_t* weapon, float (&matrix)[16]) noexcept
       auto* const owner = field<std::uint8_t*>(weapon, weapon_owner);
 
       if (!owner) return false;
+
+      // Only the verified 2006 soldier interface may supply this virtual getter.
+      // Its slot 10 adjusts to the transform stored at soldier +0xf0.
+      if (gog2006::active() &&
+          vtable_of(owner) != gog2006::address(0x7caa08)) return false;
 
       using Matrix_fn = const float*(__fastcall*)(void* self, void* edx);
       const auto get_matrix = reinterpret_cast<Matrix_fn>(
@@ -1367,6 +1394,7 @@ bool read_player_in_turret() noexcept
 
 int read_control_mode() noexcept
 {
+   if (gog2006::active()) return -1;
    __try {
       return *engine<const std::int32_t*>(exe_control_mode);
    }
@@ -3237,6 +3265,202 @@ auto basis(const glm::vec3 axis, const glm::vec3 hint) noexcept -> glm::mat3
 
 }
 
+// --- The 2006 build ---------------------------------------------------------------
+//
+// Same classes and layouts as the 2017 exe (the melee vtable slots line up one to one),
+// but the whole-program optimiser gave the weapon state functions register arguments:
+// leave_state(ESI = weapon), enter_state(EAX = state, ESI = weapon). The adapters keep
+// the callers' fastcall form and preserve the registers the originals may clobber.
+std::uintptr_t gog_leave_original = 0;
+std::uintptr_t gog_enter_original = 0;
+
+__declspec(naked) void __fastcall gog_leave_adapter(void*)
+{
+   __asm {
+      push esi
+      push edi
+      push ebx
+      push ebp
+      mov esi, ecx
+      call dword ptr [gog_leave_original]
+      pop ebp
+      pop ebx
+      pop edi
+      pop esi
+      ret
+   }
+}
+
+__declspec(naked) void __fastcall gog_enter_adapter(void*, void*, int)
+{
+   __asm {
+      push esi
+      push edi
+      push ebx
+      push ebp
+      mov esi, ecx
+      mov eax, dword ptr [esp + 20]
+      call dword ptr [gog_enter_original]
+      pop ebp
+      pop ebx
+      pop edi
+      pop esi
+      ret 4
+   }
+}
+
+// The 2006 shot functions take the weapon in ESI and have one caller each.
+std::uintptr_t gog_cannon_original = 0;
+std::uintptr_t gog_laser_original = 0;
+
+__declspec(naked) std::uint32_t __fastcall gog_cannon_adapter(void*)
+{
+   __asm {
+      push esi
+      push edi
+      push ebx
+      push ebp
+      mov esi, ecx
+      call dword ptr [gog_cannon_original]
+      pop ebp
+      pop ebx
+      pop edi
+      pop esi
+      ret
+   }
+}
+
+__declspec(naked) std::uint32_t __fastcall gog_laser_adapter(void*)
+{
+   __asm {
+      push esi
+      push edi
+      push ebx
+      push ebp
+      mov esi, ecx
+      call dword ptr [gog_laser_original]
+      pop ebp
+      pop ebx
+      pop edi
+      pop esi
+      ret
+   }
+}
+
+__declspec(naked) void gog_cannon_entry()
+{
+   __asm {
+      push ecx
+      push edx
+      mov ecx, esi
+      call cannon_fire_hook
+      pop edx
+      pop ecx
+      ret
+   }
+}
+
+__declspec(naked) void gog_laser_entry()
+{
+   __asm {
+      push ecx
+      push edx
+      mov ecx, esi
+      call laser_fire_hook
+      pop edx
+      pop ecx
+      ret
+   }
+}
+
+void install_gog_melee() noexcept
+{
+   const auto bytes_match = [](const std::uintptr_t va, const std::uint8_t (&expected)[2]) {
+      const auto* const code = reinterpret_cast<const std::uint8_t*>(gog2006::address(va));
+      return code[0] == expected[0] && code[1] == expected[1];
+   };
+
+   HMODULE self = nullptr;
+   wchar_t path[MAX_PATH] = {};
+   GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                         GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                      reinterpret_cast<LPCWSTR>(&install_gog_melee), &self);
+   GetModuleFileNameW(self, path, MAX_PATH);
+   std::wstring switch_file = path;
+   switch_file.resize(switch_file.find_last_of(L'\\') + 1);
+   switch_file += L"bf2vr_no_gog_melee.txt";
+
+   if (GetFileAttributesW(switch_file.c_str()) != INVALID_FILE_ATTRIBUTES) {
+      log(Log_level::info, "VR: GOG 2006: melee hooks switched off by bf2vr_no_gog_melee.txt.");
+      return;
+   }
+
+   // Entry bytes seen in the exe: clear (mov eax,[ecx+0x1a8]), leave/enter use ESI.
+   if (!bytes_match(0x56bab0, {0x8b, 0x81}) || !bytes_match(0x56bda0, {0x8b, 0x86}) ||
+       !bytes_match(0x56baf0, {0x8b, 0x8e})) {
+      log(Log_level::warning, "VR: GOG 2006: melee state function signatures differ.");
+      return;
+   }
+
+   state.clear_hits =
+      reinterpret_cast<State::Clear_hits_fn>(engine<std::uintptr_t>(exe_clear_hits));
+   gog_leave_original = engine<std::uintptr_t>(exe_leave_state);
+   gog_enter_original = engine<std::uintptr_t>(exe_enter_state);
+   state.leave_state = reinterpret_cast<State::Leave_state_fn>(&gog_leave_adapter);
+   state.enter_state = reinterpret_cast<State::Enter_state_fn>(&gog_enter_adapter);
+
+   state.update_fire = reinterpret_cast<State::Update_fn>(
+      patch_vtable(exe_melee_vtable, update_fire_slot, exe_update_fire,
+                   reinterpret_cast<const void*>(&update_fire_hook)));
+
+   if (state.update_fire) {
+      state.update = reinterpret_cast<State::Update_fn>(
+         patch_vtable(exe_melee_vtable, update_slot, exe_update,
+                      reinterpret_cast<const void*>(&update_hook)));
+   }
+
+   state.deflect = reinterpret_cast<State::Deflect_fn>(
+      patch_vtable(exe_melee_vtable, deflect_slot, exe_deflect,
+                   reinterpret_cast<const void*>(&deflect_hook)));
+
+   if (state.deflect) {
+      state.deflecting = reinterpret_cast<State::Deflecting_fn>(
+         patch_vtable(exe_melee_vtable, deflecting_slot, exe_deflecting,
+                      reinterpret_cast<const void*>(&deflecting_hook)));
+   }
+
+   state.render = reinterpret_cast<State::Render_fn>(
+      patch_vtable(exe_melee_vtable, render_slot, exe_render,
+                   reinterpret_cast<const void*>(&render_hook)));
+   state.render_hooked = state.render != nullptr;
+   state.gog_melee = true;
+
+   // Shots from the gun in the hand.
+   gog_cannon_original = patch_call(0x0055f490, 0x0055f9d0,
+                                    reinterpret_cast<const void*>(&gog_cannon_entry));
+   gog_laser_original = patch_call(0x0056189e, 0x00561a00,
+                                   reinterpret_cast<const void*>(&gog_laser_entry));
+
+   if (gog_cannon_original) {
+      state.cannon_fire = reinterpret_cast<State::Fire_fn>(&gog_cannon_adapter);
+   }
+
+   if (gog_laser_original) {
+      state.laser_fire = reinterpret_cast<State::Fire_fn>(&gog_laser_adapter);
+   }
+
+   log_fmt(Log_level::info, "VR: GOG 2006 shots from the gun in the hand: cannons {}, the other "
+                            "guns {}.",
+           state.cannon_fire ? "hooked" : "NOT hooked",
+           state.laser_fire ? "hooked" : "NOT hooked");
+
+   log_fmt(Log_level::info,
+           "VR: GOG 2006 melee: swings {}, blocks {}, hilt in hand {}; guns, effects and "
+           "bash stay off.",
+           state.update ? "hooked" : "NOT hooked", state.deflecting ? "hooked" : "NOT hooked",
+           state.render ? "hooked" : "NOT hooked");
+}
+
 void install_hooks() noexcept
 {
    if (state.hooked) return;
@@ -3252,11 +3476,21 @@ void install_hooks() noexcept
       log(Log_level::warning, "VR: unknown game executable, melee weapons keep the game's "
                               "third-person camera.");
 
+      // Every other read of the game's memory is addressed for the known exes: left on,
+      // the player's entity is never found (the VR view stays on the virtual screen for
+      // good) and the reads hit other data.
+      state.hooked = false;
+
       return;
    }
 
    state.force_third_person =
       reinterpret_cast<State::Force_third_person_fn>(force_third_person);
+
+   if (gog2006::active()) {
+      install_gog_melee();
+      return;
+   }
 
    state.camera_third_person = reinterpret_cast<State::Camera_third_person_fn>(
       detour(exe_camera_third_person, camera_third_person_prologue,
@@ -3405,6 +3639,8 @@ void load_tuning(const wchar_t* path) noexcept
            state.pitch_degrees, state.grip_offset);
 }
 
+bool read_droideka_position(glm::vec3& position) noexcept;
+
 void update(const Frame_input& input) noexcept
 {
    // Effects tied to the player's gun read effect_point while they live: kept at the gun.
@@ -3434,6 +3670,18 @@ void update(const Frame_input& input) noexcept
          state.body_owner = owner;
          state.body_owner_vtable = read_vtable(owner);
       }
+   }
+
+   // The droideka's entity, kept each frame its weapons can be read (read_droideka_position).
+   if (player_on_droideka()) {
+      glm::vec3 droideka{};
+
+      read_droideka_position(droideka);
+   }
+   else {
+      state.droideka_trackable = nullptr;
+      state.droideka_owner = nullptr;
+      state.droideka_owner_logged = false;
    }
 
    state.turret_body_valid = state.in_turret && read_turret_body(state.turret_body);
@@ -3827,6 +4075,10 @@ void update(const Frame_input& input) noexcept
       state.stat_swing_starts += 1;
       state.events.swing_speed = std::max(state.events.swing_speed, state.tip_speed);
       state.events.swing_left = left_faster;
+      state.events.swing_position =
+         left_faster ? soldier + state.blade_bases[left_blade] +
+                          state.blade_dirs[left_blade] * (state.blade_lengths[left_blade] * 0.5f)
+                     : soldier + state.base_offset + dir * (state.scaled_blade_length * 0.5f);
    };
 
    if (!state.lit || state.thrown || state.control_lost) {
@@ -3937,6 +4189,87 @@ bool player_gun_fire_point(glm::vec3& position, glm::vec3& direction) noexcept
    }
 }
 
+// The droideka (an EntityDroideka, laid out like a soldier for its weapons): any of its
+// weapons' owner matrix. Rolled up its weapon channels may be off, so all slots are tried.
+bool read_droideka_position(glm::vec3& position) noexcept
+{
+   if (gog2006::active()) return false;
+
+   __try {
+      const auto* const trackers = *engine<std::uint8_t* const*>(exe_trackers);
+
+      if (!trackers) return false;
+
+      const auto* const trackable = field<const std::uint8_t*>(trackers, 0x10);
+
+      if (!trackable || trackable == reinterpret_cast<const std::uint8_t*>(-1)) {
+         return false;
+      }
+
+      if (field<std::uint32_t>(trackable, 0x1c) == 0xddddddddu) return false;
+
+      if (vtable_of(trackable) != engine<std::uintptr_t>(exe_droideka_trackable_vtable)) {
+         return false;
+      }
+
+      for (int index = 0; index < 8; ++index) {
+         auto* const weapon =
+            field<std::uint8_t*>(trackable, trackable_weapons + index * sizeof(void*));
+         float matrix[16];
+
+         if (weapon && read_owner_matrix(weapon, matrix)) {
+            if (auto* const owner = field<std::uint8_t*>(weapon, weapon_owner)) {
+               state.droideka_trackable = trackable;
+               state.droideka_owner = owner;
+               state.droideka_owner_vtable = vtable_of(owner);
+            }
+
+            position = {matrix[12], matrix[13], matrix[14]};
+
+            return std::isfinite(position.x) && std::isfinite(position.y) &&
+                   std::isfinite(position.z);
+         }
+      }
+
+      // Rolled up: no weapon gives the owner, the one kept from its legs does (same
+      // droideka, same entity vtable).
+      if (state.droideka_owner && state.droideka_trackable == trackable &&
+          vtable_of(state.droideka_owner) == state.droideka_owner_vtable) {
+         using Matrix_fn = const float*(__fastcall*)(void* self, void* edx);
+         const auto get_matrix = reinterpret_cast<Matrix_fn>(field<const std::uintptr_t*>(
+            state.droideka_owner, 0)[0x28 / sizeof(std::uintptr_t)]);
+         const float* const m = get_matrix(state.droideka_owner, nullptr);
+
+         if (m) {
+            position = {m[12], m[13], m[14]};
+
+            if (!std::exchange(state.droideka_owner_logged, true)) {
+               log_fmt(Log_level::info,
+                       "VR: the rolled droideka's position read through its entity kept "
+                       "from its legs: ({:.1f}, {:.1f}, {:.1f}).",
+                       position.x, position.y, position.z);
+            }
+
+            return std::isfinite(position.x) && std::isfinite(position.y) &&
+                   std::isfinite(position.z);
+         }
+      }
+   }
+   __except (EXCEPTION_EXECUTE_HANDLER) {
+   }
+
+   return false;
+}
+
+auto player_droideka_position() noexcept -> std::optional<glm::vec3>
+{
+   glm::vec3 position{};
+
+   if (!player_on_droideka() || !read_droideka_position(position)) return std::nullopt;
+
+   return position;
+}
+
 bool player_in_turret() noexcept
 {
    return state.in_turret;
@@ -4037,6 +4370,7 @@ auto player_reload() noexcept -> std::optional<Reload>
 
 bool finish_player_reload(const void* weapon) noexcept
 {
+   if (gog2006::active() && !state.gog_melee) return false;
    auto* const reloading = read_reloading_weapon();
 
    return reloading && reloading == weapon && end_reload(reloading);
@@ -4044,6 +4378,7 @@ bool finish_player_reload(const void* weapon) noexcept
 
 bool cool_player_weapon(const float seconds) noexcept
 {
+   if (gog2006::active() && !state.gog_melee) return false;
    if (!state.hooked || seconds <= 0.0f) return false;
 
    __try {
@@ -4077,6 +4412,40 @@ bool cool_player_weapon(const float seconds) noexcept
    }
    __except (EXCEPTION_EXECUTE_HANDLER) {
       return false;
+   }
+}
+
+auto player_weapon_heat() noexcept -> std::optional<Weapon_heat>
+{
+   if (gog2006::active() && !state.gog_melee) return std::nullopt;
+   if (!state.hooked) return std::nullopt;
+
+   __try {
+      const std::uint8_t* const weapon = read_primary_weapon();
+
+      if (!weapon || vtable_of(weapon) == engine<std::uintptr_t>(exe_melee_vtable) ||
+          vtable_of(weapon) == engine<std::uintptr_t>(exe_grenade_vtable)) {
+         return std::nullopt;
+      }
+
+      const auto* const type = field<const std::uint8_t*>(weapon, weapon_class);
+      const auto* const heat = field<const std::uint8_t*>(weapon, weapon_heat);
+
+      if (!type || !heat || !(field<float>(type, class_heat_per_shot) > 0.0f)) {
+         return std::nullopt;
+      }
+
+      const auto* const limits = field<const float*>(heat, 0);
+      const float level = field<float>(heat, 4);
+
+      if (!limits || !(limits[0] > 0.0f) || !std::isfinite(level)) return std::nullopt;
+
+      // The meter is 1 (limits[0]) when cool and falls with each shot.
+      return Weapon_heat{.heat = std::clamp(1.0f - level / limits[0], 0.0f, 1.0f),
+                         .overheated = (field<std::uint32_t>(heat, 8) & 1u) != 0};
+   }
+   __except (EXCEPTION_EXECUTE_HANDLER) {
+      return std::nullopt;
    }
 }
 
@@ -4140,6 +4509,7 @@ bool galactic_conquest_shown() noexcept
 
 bool hurry_grenade_throw() noexcept
 {
+   if (gog2006::active() && !state.gog_melee) return false;
    if (!state.hooked) return false;
 
    __try {
@@ -4185,6 +4555,94 @@ auto blade_direction(const glm::mat3& hand_rotation) noexcept -> glm::vec3
 
    return glm::normalize(std::cos(pitch) * -hand_rotation[2] +
                          std::sin(pitch) * hand_rotation[1]);
+}
+
+auto play_game_sound(const std::initializer_list<const char*> names, const glm::vec3& position,
+                     const float volume) noexcept -> const char*
+{
+   using Resolve_fn = void(__fastcall*)(void* property, void* edx, const char* name,
+                                        std::uint32_t unused, std::uint32_t lazy);
+   using Play_fn = State::Effect_play_fn;
+
+   struct Sound_property {
+      std::uint32_t object = 0;
+      std::uint8_t kind = 0;
+      std::uint8_t padding[11]{};
+   };
+
+   static bool checked = false;
+   static Resolve_fn resolve = nullptr;
+   static Play_fn play = nullptr;
+
+   if (!checked) {
+      checked = true;
+
+      const auto resolve_at = engine<std::uintptr_t>(exe_sound_resolve);
+      const auto play_at = engine<std::uintptr_t>(exe_effect_play);
+
+      if (!gog2006::active() && resolve_at &&
+          std::memcmp(reinterpret_cast<const void*>(resolve_at), sound_resolve_prologue,
+                      sizeof(sound_resolve_prologue)) == 0) {
+         resolve = reinterpret_cast<Resolve_fn>(resolve_at);
+      }
+
+      if (state.effect_play) {
+         play = state.effect_play; // past our own hook
+      }
+      else if (!gog2006::active() && play_at &&
+               std::memcmp(reinterpret_cast<const void*>(play_at), effect_play_prologue,
+                           sizeof(effect_play_prologue)) == 0) {
+         play = reinterpret_cast<Play_fn>(play_at);
+      }
+
+      log(resolve && play ? Log_level::info : Log_level::warning,
+          resolve && play ? "VR: the game's sounds can be played (saber swings)."
+                          : "VR: the game's sound functions aren't the expected ones: saber "
+                            "swings are silent.");
+   }
+
+   if (!resolve || !play) return nullptr;
+
+   for (const char* const name : names) {
+      Sound_property property{};
+
+      resolve(&property, nullptr, name, 0, 0);
+
+      if (!property.object || property.kind < 1 || property.kind > 3) continue;
+
+      auto* const object = reinterpret_cast<std::uint8_t*>(property.object);
+      const std::ptrdiff_t gain_offset = property.kind == 1 ? 0x10 : property.kind == 3 ? 0x1c : -1;
+      float* gain = nullptr;
+      float gain_was = 0.0f;
+
+      if (gain_offset >= 0 && readable_memory(object + gain_offset, sizeof(float))) {
+         gain = reinterpret_cast<float*>(object + gain_offset);
+         gain_was = *gain;
+
+         if (!(gain_was > 0.0f && gain_was <= 4.0f)) gain = nullptr;
+      }
+
+      static bool logged = false;
+
+      if (!std::exchange(logged, true)) {
+         log_fmt(Log_level::info,
+                 "VR: the game's sound \"{}\" plays the saber swings (kind {}, loudness {}).",
+                 name, property.kind,
+                 gain ? std::to_string(gain_was) : std::string{"not adjustable"});
+      }
+
+      if (gain) *gain = gain_was * std::clamp(volume, 0.0f, 1.0f);
+
+      const float point[3] = {position.x, position.y, position.z};
+
+      play(&property, nullptr, point, nullptr, nullptr, 1);
+
+      if (gain) *gain = gain_was;
+
+      return name;
+   }
+
+   return nullptr;
 }
 
 auto player_saber_hilt() noexcept -> std::optional<glm::vec3>

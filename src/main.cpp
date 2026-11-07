@@ -5,6 +5,7 @@
 #include "logger.hpp"
 #include "unlock_memory.hpp"
 #include "user_config.hpp"
+#include "vr/gog2006.hpp"
 #include "vr/vr_system.hpp"
 #include "window_hooks.hpp"
 
@@ -193,6 +194,16 @@ extern "C" IDirect3D9* __stdcall direct3d9_create(UINT sdk) noexcept
 
 extern "C" IDirect3D9* __stdcall shader_patch_direct3d9_create(UINT sdk) noexcept
 {
+   // The June 2006 executable (old GOG / pirated copies) is frozen: its hooks are kept in
+   // the sources behind sp::vr::gog2006::active() but not supported or tested any more.
+   if (sp::vr::gog2006::active()) {
+      MessageBoxA(nullptr,
+                  "BattlefrontII.exe is not supported by the VR Mod!\n"
+                  "Steam Classic Battlefront 2 2005 Required!",
+                  "Classic BF2 VR Mod", MB_OK | MB_ICONERROR | MB_TOPMOST);
+      ExitProcess(1);
+   }
+
    if (sp::user_config.enabled) return sp::d3d9::Creator::create().release();
 
    return direct3d9_create(sdk);

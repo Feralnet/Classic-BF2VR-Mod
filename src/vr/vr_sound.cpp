@@ -1,5 +1,7 @@
 
 #include "vr_sound.hpp"
+#include "vr_melee.hpp"
+#include "vr_settings.hpp"
 #include "../logger.hpp"
 
 #include <algorithm>
@@ -7,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <numbers>
+#include <utility>
 #include <vector>
 
 #include <Windows.h>
@@ -19,15 +22,15 @@ namespace sp::vr::sound {
 namespace {
 
 constexpr std::uint32_t sample_rate = 44100;
-constexpr float swing_seconds = 0.42f;
 constexpr int voice_count = 4;
 
-// Swings: volume and pitch from the tip's speed, and the shortest gap between two.
-constexpr float swing_quiet_speed = 4.0f;
-constexpr float swing_loud_speed = 11.0f;
-constexpr float swing_min_volume = 0.3f;
-constexpr float swing_max_volume = 0.7f;
-constexpr float swing_min_interval = 0.12f;
+// Swings: the tip this much faster than the threshold is a full-loudness swing; the
+// quietest heard swing is this fraction of full. Each sound adds 1 to a run count that
+// fades this much per second; a run of n sounds plays at 1 / (1 + run_quieting x n).
+constexpr float swing_full_range = 6.0f; // m/s
+constexpr float swing_min_loudness = 0.4f;
+constexpr float swing_run_fade = 1.5f;
+constexpr float swing_run_quieting = 0.35f;
 
 struct Audio {
    bool tried = false;
@@ -36,64 +39,14 @@ struct Audio {
    IXAudio2MasteringVoice* master = nullptr;
    std::array<IXAudio2SourceVoice*, voice_count> voices{};
    int next_voice = 0;
-   std::vector<std::int16_t> swing;
    std::vector<std::int16_t> thud;
    std::vector<std::int16_t> swish;
    LONGLONG last_swing = 0;
+   float swing_run = 0.0f;
+   bool swing_missing_logged = false;
 };
 
 Audio audio;
-
-// A saber swing: the hum's harmonics bent up and back down as the blade passes (like a
-// Doppler shift), with a breath of filtered noise, under a quick swell and a long fade.
-auto make_swing() -> std::vector<std::int16_t>
-{
-   const int count = static_cast<int>(swing_seconds * sample_rate);
-   std::vector<float> samples(count);
-   constexpr float two_pi = 2.0f * std::numbers::pi_v<float>;
-   float phase = 0.0f;
-   float noise = 0.0f;
-   std::uint32_t seed = 0x2545f491u;
-   float peak = 1e-6f;
-
-   for (int i = 0; i < count; ++i) {
-      const float t = static_cast<float>(i) / sample_rate;
-      const float u = t / swing_seconds;
-      const float envelope =
-         u < 0.3f ? std::pow(u / 0.3f, 1.5f) : std::pow(1.0f - (u - 0.3f) / 0.7f, 1.8f);
-      const float bend = (u - 0.35f) / 0.17f;
-      const float frequency = 92.0f * (1.0f + 0.5f * std::exp(-bend * bend));
-
-      phase += two_pi * frequency / sample_rate;
-
-      if (phase > two_pi) phase -= two_pi;
-
-      const float hum = std::sin(phase) + 0.55f * std::sin(2.0f * phase + 0.3f) +
-                        0.35f * std::sin(3.0f * phase) + 0.2f * std::sin(4.0f * phase + 1.1f) +
-                        0.12f * std::sin(6.0f * phase);
-      const float wobble = 1.0f + 0.15f * std::sin(two_pi * 31.0f * t);
-
-      seed = seed * 1664525u + 1013904223u;
-
-      const float white = static_cast<float>(seed >> 8) / 8388608.0f - 1.0f;
-      const float cutoff = 0.04f + 0.12f * envelope; // one-pole low-pass
-
-      noise += cutoff * (white - noise);
-
-      const float sample = envelope * (0.6f * hum * wobble + 1.6f * noise);
-
-      samples[i] = sample;
-      peak = std::max(peak, std::abs(sample));
-   }
-
-   std::vector<std::int16_t> pcm(count);
-
-   for (int i = 0; i < count; ++i) {
-      pcm[i] = static_cast<std::int16_t>(samples[i] / peak * 0.9f * 32767.0f);
-   }
-
-   return pcm;
-}
 
 // A weapon bash: a thud (a falling low tone with a crack of noise at its start), or a
 // short swish of filtered noise.
@@ -166,7 +119,6 @@ bool init() noexcept
    }
 
    try {
-      audio.swing = make_swing();
       audio.thud = make_bash(true);
       audio.swish = make_bash(false);
    }
@@ -195,8 +147,8 @@ bool ready() noexcept
       audio.ready = init();
 
       log(audio.ready ? Log_level::info : Log_level::warning,
-          audio.ready ? "VR: swing sounds ready (XAudio2)."
-                      : "VR: XAudio2 unavailable, saber swings are silent.");
+          audio.ready ? "VR: weapon bash sounds ready (XAudio2)."
+                      : "VR: XAudio2 unavailable, weapon bashes are silent.");
    }
 
    return audio.ready;
@@ -228,43 +180,40 @@ void play_bash(const bool hit) noexcept
    play(hit ? audio.thud : audio.swish, hit ? 0.8f : 0.4f);
 }
 
-void play_swing(const float tip_speed) noexcept
+void play_swing(const float tip_speed, const glm::vec3& position) noexcept
 {
-   if (!audio.tried) {
-      audio.tried = true;
-      audio.ready = init();
+   const Settings& s = settings();
 
-      log(audio.ready ? Log_level::info : Log_level::warning,
-          audio.ready ? "VR: swing sounds ready (XAudio2)."
-                      : "VR: XAudio2 unavailable, saber swings are silent.");
+   if (!s.saber_sound || s.saber_sound_volume <= 0.0f) return;
+   if (tip_speed < s.saber_sound_speed) return;
+
+   const float since = audio.last_swing ? seconds_since(audio.last_swing) : 1e6f;
+
+   if (since < s.saber_sound_interval) return;
+
+   audio.swing_run = std::max(audio.swing_run - since * swing_run_fade, 0.0f);
+
+   const float strength =
+      std::clamp((tip_speed - s.saber_sound_speed) / swing_full_range, 0.0f, 1.0f);
+   const float loudness = swing_min_loudness + (1.0f - swing_min_loudness) * strength;
+   const float volume =
+      s.saber_sound_volume * loudness / (1.0f + swing_run_quieting * audio.swing_run);
+
+   // The game's sounds tried, first loaded wins: sabers', then the Wampa's (the stock
+   // melee sides' combo files).
+   if (!melee::play_game_sound({"saber_swing", "com_weap_melee_swing"}, position, volume)) {
+      if (!std::exchange(audio.swing_missing_logged, true)) {
+         log(Log_level::warning, "VR: no swing sound of the game is loaded (saber_swing, "
+                                 "com_weap_melee_swing): saber swings are silent.");
+      }
+
+      return;
    }
-
-   if (!audio.ready) return;
-
-   if (audio.last_swing && seconds_since(audio.last_swing) < swing_min_interval) return;
 
    LARGE_INTEGER now{};
    QueryPerformanceCounter(&now);
    audio.last_swing = now.QuadPart;
-
-   const float strength = std::clamp((tip_speed - swing_quiet_speed) /
-                                        (swing_loud_speed - swing_quiet_speed),
-                                     0.0f, 1.0f);
-   IXAudio2SourceVoice* const voice = audio.voices[audio.next_voice];
-
-   audio.next_voice = (audio.next_voice + 1) % voice_count;
-
-   XAUDIO2_BUFFER buffer{};
-   buffer.Flags = XAUDIO2_END_OF_STREAM;
-   buffer.AudioBytes = static_cast<UINT32>(audio.swing.size() * sizeof(std::int16_t));
-   buffer.pAudioData = reinterpret_cast<const BYTE*>(audio.swing.data());
-
-   voice->Stop();
-   voice->FlushSourceBuffers();
-   voice->SubmitSourceBuffer(&buffer);
-   voice->SetVolume(swing_min_volume + (swing_max_volume - swing_min_volume) * strength);
-   voice->SetFrequencyRatio(0.9f + 0.35f * strength);
-   voice->Start();
+   audio.swing_run += 1.0f;
 }
 
 }

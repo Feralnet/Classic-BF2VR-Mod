@@ -8,6 +8,7 @@
 #include "../material/editor.hpp"
 #include "../message_hooks.hpp"
 #include "../user_config.hpp"
+#include "../vr/vr_perf.hpp"
 #include "../vr/vr_system.hpp"
 #include "patch_material_io.hpp"
 #include "patch_texture_io.hpp"
@@ -315,6 +316,8 @@ void Shader_patch::present() noexcept
    _effects.profiler.end_frame(*_device_context);
    _game_postprocessing.end_frame();
 
+   vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::vr_post);
+
    bool vr_frame_submitted = false;
 
    if (_game_rendertargets[0].type != Game_rt_type::presentation) {
@@ -360,6 +363,7 @@ void Shader_patch::present() noexcept
          vr_frame_submitted = true;
       }
 
+      vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::desktop);
       patch_backbuffer_resolve();
    }
 
@@ -372,7 +376,13 @@ void Shader_patch::present() noexcept
 
    if (!vr_frame_submitted) vr::submit_frame(*_device_context, *_swapchain.texture(), false);
 
-   if (_swapchain.present() == Present_status::needs_reset) {
+   const Present_status present_status = [&] {
+      const vr::perf::Cpu_scope perf_scope{vr::perf::Cpu_part::present};
+
+      return _swapchain.present();
+   }();
+
+   if (present_status == Present_status::needs_reset) {
       const bool reset_game_rendertarget =
          _game_rendertargets[0].type == Game_rt_type::presentation;
 
@@ -383,6 +393,8 @@ void Shader_patch::present() noexcept
       if (reset_game_rendertarget)
          _game_rendertargets[0] = _swapchain.game_rendertarget();
    }
+
+   vr::perf::frame_end(*_device_context, _render_width, _render_height);
 
    _shader_database.cache_update();
 
@@ -1066,6 +1078,7 @@ void Shader_patch::stretch_rendertarget(const Game_rendertarget_id source,
             _patch_backbuffer.sample_count,
             _postprocess_projection_matrix};
 
+         vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::effects);
          _effects.postprocess.apply(*_device_context, _rendertarget_allocator,
                                     _effects.profiler, _shader_resource_database,
                                     _cb_scene.vs_view_positionWS, _effects.ffx_cas,
@@ -1753,6 +1766,7 @@ template<typename Issue_draw>
 void Shader_patch::draw_for_each_eye(const UINT element_count,
                                      const Issue_draw& issue_draw) noexcept
 {
+   const vr::perf::Cpu_scope perf_scope{vr::perf::Cpu_part::draws};
    const auto& rt = _game_rendertargets[static_cast<int>(_current_game_rendertarget)];
    const bool side_by_side = rt.width == _render_width && rt.height == _render_height &&
                              !_override_viewport && vr::stereo_frame();
@@ -1806,12 +1820,20 @@ void Shader_patch::draw_for_each_eye(const UINT element_count,
    // HUD draws: into the HUD layer only (vr::draw_hud shows it in front of the eyes).
    if (side_by_side && !full_screen_pass && !_oit_active && _vr_hud_layer_drawn &&
        vr::hud_to_layer(_cb_scene.projection_matrix)) {
+      vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::hud);
+      vr::perf::count_draw(vr::perf::Gpu_group::hud);
       draw_into_vr_hud_layer(issue_draw);
 
       return;
    }
 
    if (!side_by_side || full_screen_pass) {
+      const auto perf_group = side_by_side ? vr::perf::Gpu_group::full_screen
+                                           : vr::perf::Gpu_group::offscreen;
+
+      vr::perf::gpu_mark(*_device_context, perf_group);
+      vr::perf::count_draw(perf_group);
+
       // A previous stereo draw left eye cameras in the constant buffers.
       if (std::exchange(_vr_eye_constants_bound, false)) {
          update_dynamic_buffer(*_device_context, *_cb_scene_buffer, _cb_scene);
@@ -1854,6 +1876,9 @@ void Shader_patch::draw_for_each_eye(const UINT element_count,
    // the scope's view in a column right of them.
    const glm::vec2 target{static_cast<float>(rt.width), static_cast<float>(rt.height)};
    const int views = vr::view_count();
+
+   vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::world);
+   vr::perf::count_draw(vr::perf::Gpu_group::world);
 
    for (int eye = 0; eye < views; ++eye) {
       const vr::View_rect rect = vr::view_rect(eye, {rt.width, rt.height});
@@ -2148,6 +2173,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                                    ? _farscene_depthstencil.srv.get()
                                    : _nearscene_depthstencil.srv.get();
 
+               vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::effects);
                _effects.ssao.apply(_effects.profiler, *_device_context,
                                    *depth_srv, *dest.rtv,
                                    _ambient_occlusion_output_blend_state.get(),
@@ -2357,6 +2383,7 @@ void Shader_patch::game_rendertype_changed() noexcept
          _discard_draw_calls = true;
 
          if (user_config.graphics.enable_scene_blur && _effects.allow_scene_blur()) {
+            vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::effects);
             _game_postprocessing.apply_scene_blur(*_device_context,
                                                   _game_rendertargets[0],
                                                   _rendertarget_allocator);
@@ -2372,6 +2399,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                _previous_shader_rendertype == Rendertype::filtercopy) {
          _discard_draw_calls = true;
 
+         vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::effects);
          _game_postprocessing.apply_scope_blur(*_device_context,
                                                _game_rendertargets[0],
                                                _rendertarget_allocator);
@@ -2392,6 +2420,7 @@ void Shader_patch::game_rendertype_changed() noexcept
 
          _game_postprocessing.bloom_threshold(_cb_draw_ps.ps_custom_constants[0].w);
          _game_postprocessing.bloom_intensity(intensity);
+         vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::effects);
          _game_postprocessing.apply_bloom(*_device_context, _game_rendertargets[0],
                                           _rendertarget_allocator);
 
@@ -2413,6 +2442,7 @@ void Shader_patch::game_rendertype_changed() noexcept
                              ? _farscene_depthstencil.srv.get()
                              : _nearscene_depthstencil.srv.get();
 
+         vr::perf::gpu_mark(*_device_context, vr::perf::Gpu_group::effects);
          _effects.ssao.apply(_effects.profiler, *_device_context, *depth_srv,
                              *_game_rendertargets[0].rtv, nullptr,
                              _informal_projection_matrix);

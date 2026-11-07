@@ -193,6 +193,7 @@
     <ClCompile Include="src\dinput_hooks.cpp" />
     <ClCompile Include="src\vr\vr_hud_render.cpp" />
     <ClCompile Include="src\vr\vr_melee.cpp" />
+    <ClCompile Include="src\vr\vr_perf.cpp" />
     <ClCompile Include="src\vr\vr_post_render.cpp" />
     <ClCompile Include="src\vr\vr_settings.cpp" />
     <ClCompile Include="src\vr\vr_saber_render.cpp" />
@@ -325,6 +326,7 @@
     <ClInclude Include="src\vr\vr_settings.hpp" />
     <ClInclude Include="src\vr\vr_saber_render.hpp" />
     <ClInclude Include="src\vr\vr_sound.hpp" />
+    <ClInclude Include="src\vr\vr_perf.hpp" />
     <ClInclude Include="src\vr\vr_system.hpp" />
     <ClInclude Include="src\direct3d\format_patcher.hpp" />
     <ClInclude Include="src\direct3d\upload_texture.hpp" />

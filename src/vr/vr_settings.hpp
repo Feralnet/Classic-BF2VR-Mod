@@ -49,7 +49,10 @@ struct Settings {
 
    // View.
    float overscan_degrees = 2.0f; // extra field of view rendered at the edges
-   bool overscan_by_speed = true; // and more while the head turns fast
+   // And more while the head turns fast. Off by default: the submitted field of view then
+   // changes from frame to frame, and Steam Link (Steam Frame, Quest) showed a doubled
+   // image while turning at 90 Hz and up (player reports 2026-11-02).
+   bool overscan_by_speed = false;
    bool head_view = true;         // billboards, shadows and flares follow the head
    bool cull_from_eyes = true;    // a small character's view culled from its eyes
 
@@ -118,6 +121,16 @@ struct Settings {
    Vehicle_steer_mode vehicle_steer_mode = Vehicle_steer_mode::speed;
    float vehicle_stick_range = 400.0f; // mouse counts at full deflection (position)
    float vehicle_steer_speed = 1500.0f;
+   // A rolled-up droideka is seen in the headset from the game's camera over it (the view
+   // turning with the droideka), not on the virtual screen.
+   bool droideka_rolled_view = true;
+   // ... from inside it (first person: the eyes this high over the droideka's origin,
+   // turning only with its heading, never rolling with the ball), else from the game's
+   // camera behind it.
+   bool droideka_first_person = true;
+   float droideka_eye_height = 0.8f;   // metres over the droideka's origin
+   float droideka_eye_forward = 0.0f;  // metres along its heading
+   float droideka_hide_radius = 1.0f;  // its own draws this close to its origin aren't drawn
    bool gesture_throw = true; // grenades: hold the left trigger, swing, let go
 
    // Quick reload: a bar of the reload's progress with a blue window; reload pressed
@@ -130,6 +143,10 @@ struct Settings {
    // fast while shaken hard; 1 = only as the game cools them.
    float shake_cooling = 4.0f;
 
+   // A light vibration in the gun hand while an overheating gun cools down, stronger while
+   // it's shaken (shake_cooling).
+   bool cooling_haptics = true;
+
    // The game's crosshair: this far along the shots' line from where they start (the
    // gun's muzzle, a turret's barrel), metres.
    float crosshair_distance = 8.0f;
@@ -140,6 +157,15 @@ struct Settings {
    // swing once it has moved this far that fast (a flick of the wrist doesn't).
    float saber_swing_speed = 6.0f;     // m/s
    float saber_swing_distance = 0.15f; // metres
+
+   // Saber swing sound (the game's own "saber_swing", at the blade): swings with the tip
+   // slower than saber_sound_speed are silent, faster ones louder up to
+   // saber_sound_volume (of the game's loudness); none sooner than saber_sound_interval
+   // after the last, and a quick run of swings gets quieter.
+   bool saber_sound = true;
+   float saber_sound_volume = 0.8f;   // 0..1
+   float saber_sound_speed = 7.0f;    // m/s
+   float saber_sound_interval = 0.3f; // seconds
 
    // Saber block: a bolt that hits near the blade is deflected without holding the grips
    // (both grips with the blade upright still block everything in front).

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <initializer_list>
 #include <optional>
 
 #include <glm/glm.hpp>
@@ -66,6 +67,7 @@ struct Events {
    int bash_blocked = 0;  // ... that a saber blocked
    int left_hits = 0;     // of `hits`, by a saber in the left hand (dual sabers)
    bool swing_left = false; // the swing was started by the left hand's saber
+   glm::vec3 swing_position{}; // world: the swinging blade's middle, as it started
 };
 
 auto take_events() noexcept -> Events;
@@ -92,6 +94,10 @@ bool player_in_turret() noexcept;
 
 // The local player controls a droideka (EntityDroideka; as of the last update).
 bool player_on_droideka() noexcept;
+
+// The player's droideka's origin in the world (its entity matrix, through one of its
+// weapons' owner, like the soldier's feet), read now; none off a droideka or unreadable.
+auto player_droideka_position() noexcept -> std::optional<glm::vec3>;
 
 // The game's control mode for the local player, read now: which of the profile's control
 // sets its keys come from (0 soldier, 1 vehicle, 2 starfighter, 3 jedi, 4 turret); -1
@@ -134,6 +140,15 @@ bool finish_player_reload(const void* weapon) noexcept;
 // cool: gives it `seconds` more of the game's own cooling (HeatRecoverRate x seconds),
 // ending an overheat the way the game does. True if the weapon took it.
 bool cool_player_weapon(float seconds) noexcept;
+
+// The heat of the overheating weapon in the player's hand: 0 cool .. 1 full, and whether
+// it's overheated (can't fire). Nothing for weapons that don't overheat.
+struct Weapon_heat {
+   float heat = 0.0f;
+   bool overheated = false;
+};
+
+auto player_weapon_heat() noexcept -> std::optional<Weapon_heat>;
 
 // While the game winds up a throw of the player's grenade (fire held), skips the rest of
 // the wind-up: the grenade leaves at the game's next update. True while winding up.
@@ -197,6 +212,13 @@ bool game_saber_in_hand() noexcept;
 // Where the game's saber was put in the hand this frame or the last (the hilt's origin,
 // world): its draws are found by it however far the hand is from the game's camera.
 auto player_saber_hilt() noexcept -> std::optional<glm::vec3>;
+
+// Plays the first of the game's own sounds `names` (as the combo files name them,
+// e.g. "saber_swing") the loaded sides have, once, at `position` (world), at `volume`
+// (0..1) of its own loudness. Returns the name played, nullptr if none is loaded (or
+// the game's sound functions aren't the expected ones). Game thread only.
+auto play_game_sound(std::initializer_list<const char*> names, const glm::vec3& position,
+                     float volume) noexcept -> const char*;
 
 
 // The same for dual sabers' second hilt, in the left hand.
